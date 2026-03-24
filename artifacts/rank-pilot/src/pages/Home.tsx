@@ -21,13 +21,21 @@ import {
   ChevronRight,
   XCircle,
   Download,
+  TrendingUp,
+  Check,
+  Star,
+  Users,
+  Shield,
+  BarChart2,
+  Menu,
+  X,
 } from "lucide-react";
 import { useAnalyzeContent, useOptimizeContent } from "@workspace/api-client-react";
 import type { ContentSection, FaqItem, Issue, Opportunity } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScoreRing } from "@/components/ScoreRing";
 
-/* ── Step messages for loading panel ── */
+/* ── Loading step messages ── */
 const ANALYZE_STEPS = [
   "Reading your content...",
   "Checking SEO structure...",
@@ -54,7 +62,7 @@ const OPTIMIZE_STEPS = [
   "Finalizing your content...",
 ];
 
-/* ── Animated Loading Panel ── */
+/* ── Animated Loading Panel (unchanged) ── */
 function LoadingPanel({ mode, isUrl }: { mode: "analyze" | "optimize"; isUrl: boolean }) {
   const [stepIdx, setStepIdx] = useState(0);
   const steps = mode === "optimize" ? OPTIMIZE_STEPS : isUrl ? ANALYZE_URL_STEPS : ANALYZE_STEPS;
@@ -95,12 +103,10 @@ function LoadingPanel({ mode, isUrl }: { mode: "analyze" | "optimize"; isUrl: bo
             : <Sparkles className="w-7 h-7 text-[#4d44e3]" />}
         </div>
       </div>
-
       <div className="space-y-1">
         <p className="text-xl font-bold text-gray-900">{label}</p>
         <p className="text-sm text-gray-500">This usually takes 15–30 seconds</p>
       </div>
-
       <div className="w-full max-w-sm">
         <div className="relative h-6 overflow-hidden">
           <AnimatePresence mode="wait">
@@ -120,10 +126,7 @@ function LoadingPanel({ mode, isUrl }: { mode: "analyze" | "optimize"; isUrl: bo
           {steps.map((_, i) => (
             <motion.span
               key={i}
-              animate={{
-                scale: i === stepIdx ? 1.3 : 1,
-                backgroundColor: i <= stepIdx ? "#4d44e3" : "#e5e7eb",
-              }}
+              animate={{ scale: i === stepIdx ? 1.3 : 1, backgroundColor: i <= stepIdx ? "#4d44e3" : "#e5e7eb" }}
               transition={{ duration: 0.25 }}
               className="w-1.5 h-1.5 rounded-full"
             />
@@ -134,7 +137,7 @@ function LoadingPanel({ mode, isUrl }: { mode: "analyze" | "optimize"; isUrl: bo
   );
 }
 
-/* ── Inline Error Card ── */
+/* ── Inline Error Card (unchanged) ── */
 function ErrorCard({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <motion.div
@@ -163,12 +166,16 @@ function isUrl(input: string): boolean {
   return /^https?:\/\//i.test(input.trim());
 }
 
+/* ══════════════════════════════════════
+   MAIN PAGE
+══════════════════════════════════════ */
 export default function Home() {
   const [content, setContent] = useState("");
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
   const inputIsUrl = isUrl(content);
 
@@ -261,45 +268,131 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8fafc]">
 
-      {/* Top nav bar */}
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
-        <img
-          src={`${import.meta.env.BASE_URL}images/logo.png`}
-          alt="RankPilot AI Logo"
-          className="w-8 h-8 rounded-lg"
-        />
-        <span className="font-bold text-gray-900 text-lg font-display">
-          Rank<span className="text-gradient">Pilot</span> AI
-        </span>
+      {/* ── STICKY HEADER ── */}
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <a href="#" className="flex items-center gap-2.5">
+            <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="RankPilot AI" className="w-8 h-8 rounded-lg" />
+            <span className="font-bold text-gray-900 text-lg font-display">
+              Rank<span className="text-gradient">Pilot</span> AI
+            </span>
+          </a>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-8">
+            <a href="#features" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Features</a>
+            <a href="#how-it-works" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">How it Works</a>
+            <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
+          </nav>
+
+          {/* CTA + mobile toggle */}
+          <div className="flex items-center gap-3">
+            <a
+              href="#analyzer"
+              className="hidden sm:inline-flex items-center gap-2 px-5 py-2 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 hover:-translate-y-0.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Try Free
+            </a>
+            <button
+              onClick={() => setMobileMenuOpen(o => !o)}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-1"
+            >
+              {["#features", "#how-it-works", "#pricing"].map((href, i) => (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  {["Features", "How it Works", "Pricing"][i]}
+                </a>
+              ))}
+              <a href="#analyzer" onClick={() => setMobileMenuOpen(false)}
+                className="block mt-2 px-3 py-2.5 bg-[#4d44e3] text-white rounded-xl text-sm font-semibold text-center">
+                Try Free
+              </a>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-
-        {/* Hero */}
-        <div className="text-center space-y-4 mb-12">
-          <motion.h1
-            initial={{ y: 16, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="text-4xl md:text-6xl font-extrabold text-gray-900 tracking-tighter"
-          >
+      {/* ── HERO ── */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 text-center">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4d44e3]/8 border border-[#4d44e3]/20 rounded-full text-xs font-semibold text-[#4d44e3] uppercase tracking-wide">
+            <Star className="w-3 h-3" /> SEO · AEO · GEO · AI Visibility
+          </span>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 tracking-tighter leading-[1.05]">
             Rank<span className="text-gradient">Pilot</span> AI
-          </motion.h1>
-          <motion.p
-            initial={{ y: 16, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto"
-          >
-            Elevate your content for search engines, answer engines, and generative AI with a single click.
-          </motion.p>
+          </h1>
+          <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+            Paste content or a URL. Get AI-powered SEO, AEO, GEO, and AI Visibility scores — then fix everything automatically.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <a
+              href="#analyzer"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+            >
+              <Zap className="w-4 h-4 text-yellow-300" /> Analyze Content Free
+            </a>
+            <a
+              href="#how-it-works"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-semibold text-base border border-gray-200 shadow-sm transition-all duration-200"
+            >
+              See how it works <ChevronRight className="w-4 h-4" />
+            </a>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── TRUST SECTION ── */}
+      <section className="border-y border-gray-200 bg-white py-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-7">
+            Trusted by marketers and founders
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+            {[
+              { label: "Growth Teams", icon: <TrendingUp className="w-4 h-4" /> },
+              { label: "Content Agencies", icon: <FileText className="w-4 h-4" /> },
+              { label: "SaaS Founders", icon: <Sparkles className="w-4 h-4" /> },
+              { label: "SEO Experts", icon: <Search className="w-4 h-4" /> },
+              { label: "E-commerce Brands", icon: <BarChart2 className="w-4 h-4" /> },
+              { label: "Indie Hackers", icon: <Users className="w-4 h-4" /> },
+            ].map(({ label, icon }) => (
+              <div key={label} className="flex items-center gap-2 text-gray-400 font-semibold text-sm">
+                <span className="text-gray-300">{icon}</span>
+                {label}
+              </div>
+            ))}
+          </div>
         </div>
+      </section>
+
+      {/* ── ANALYZER TOOL (unchanged UI) ── */}
+      <section id="analyzer" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
 
         {/* Input */}
         {!showOptimized && (
           <motion.div
             initial={{ y: 16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.1 }}
             className="mb-10"
           >
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-[#4d44e3]/30 focus-within:border-[#4d44e3]/50 transition-all">
@@ -345,12 +438,8 @@ export default function Home() {
 
         {/* Loading */}
         <AnimatePresence mode="wait">
-          {analyzeMutation.isPending && (
-            <LoadingPanel key="analyze-loading" mode="analyze" isUrl={inputIsUrl} />
-          )}
-          {optimizeMutation.isPending && (
-            <LoadingPanel key="optimize-loading" mode="optimize" isUrl={inputIsUrl} />
-          )}
+          {analyzeMutation.isPending && <LoadingPanel key="analyze-loading" mode="analyze" isUrl={inputIsUrl} />}
+          {optimizeMutation.isPending && <LoadingPanel key="optimize-loading" mode="optimize" isUrl={inputIsUrl} />}
         </AnimatePresence>
 
         {/* Errors */}
@@ -363,7 +452,7 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        {/* ── Analysis Results ── */}
+        {/* Analysis Results */}
         <AnimatePresence>
           {showResults && (
             <motion.div
@@ -539,7 +628,7 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        {/* ── Optimized Content Display ── */}
+        {/* Optimized Content Display */}
         <AnimatePresence>
           {showOptimized && optimizeMutation.data && (
             <motion.div
@@ -560,30 +649,21 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={handleCopy}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#4d44e3]/10 hover:bg-[#4d44e3]/15 text-[#4d44e3] text-sm font-semibold transition-colors border border-[#4d44e3]/20"
-                  >
+                  <button onClick={handleCopy}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#4d44e3]/10 hover:bg-[#4d44e3]/15 text-[#4d44e3] text-sm font-semibold transition-colors border border-[#4d44e3]/20">
                     {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                     {copied ? "Copied!" : "Copy"}
                   </button>
-                  <button
-                    onClick={handleDownload}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-semibold transition-colors border border-teal-200"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download .txt
+                  <button onClick={handleDownload}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-semibold transition-colors border border-teal-200">
+                    <Download className="w-4 h-4" /> Download .txt
                   </button>
-                  <button
-                    onClick={handleReanalyze}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold transition-colors border border-gray-200"
-                  >
+                  <button onClick={handleReanalyze}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold transition-colors border border-gray-200">
                     <RefreshCw className="w-4 h-4" /> Re-analyze
                   </button>
-                  <button
-                    onClick={handleStartOver}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 text-sm font-semibold transition-colors border border-gray-200"
-                  >
+                  <button onClick={handleStartOver}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 text-sm font-semibold transition-colors border border-gray-200">
                     Start Over
                   </button>
                 </div>
@@ -592,9 +672,7 @@ export default function Home() {
               {/* Document card */}
               <div className="bg-white border border-gray-200 shadow-sm rounded-2xl overflow-hidden relative">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#4d44e3] via-blue-500 to-teal-500" />
-
                 <div className="p-8 md:p-12 space-y-10">
-
                   {/* Title + Meta */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-xs font-bold text-[#4d44e3]/70 uppercase tracking-widest">
@@ -630,13 +708,7 @@ export default function Home() {
                   {optimizeMutation.data.sections.length > 0 && (
                     <div className="space-y-8">
                       {optimizeMutation.data.sections.map((section: ContentSection, i: number) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="space-y-3"
-                        >
+                        <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="space-y-3">
                           {section.level <= 2 ? (
                             <h2 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
                               <span className="w-1 h-6 rounded-full bg-[#4d44e3] flex-shrink-0" />
@@ -648,9 +720,7 @@ export default function Home() {
                               {section.heading}
                             </h3>
                           )}
-                          {section.content && (
-                            <p className="text-base text-gray-600 leading-relaxed pl-3">{section.content}</p>
-                          )}
+                          {section.content && <p className="text-base text-gray-600 leading-relaxed pl-3">{section.content}</p>}
                           {section.bullets.length > 0 && (
                             <ul className="space-y-2 pl-3">
                               {section.bullets.map((bullet: string, bi: number) => (
@@ -676,13 +746,8 @@ export default function Home() {
                       </div>
                       <div className="space-y-3">
                         {optimizeMutation.data.faq.map((item: FaqItem, i: number) => (
-                          <motion.div
-                            key={i}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.06 }}
-                            className="bg-gray-50 border border-gray-200 rounded-xl p-5"
-                          >
+                          <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
+                            className="bg-gray-50 border border-gray-200 rounded-xl p-5">
                             <p className="font-semibold text-gray-900 mb-2 flex items-start gap-2">
                               <span className="text-[#4d44e3] font-black text-base leading-tight">Q</span>
                               {item.question}
@@ -720,16 +785,13 @@ export default function Home() {
                     </div>
                     <p className="text-base md:text-lg text-gray-700 leading-relaxed">{optimizeMutation.data.conclusion}</p>
                   </div>
-
                 </div>
               </div>
 
               {/* Bottom export bar */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pb-8">
-                <button
-                  onClick={handleCopy}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-3.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
-                >
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pb-4">
+                <button onClick={handleCopy}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-3.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
                   <AnimatePresence mode="wait">
                     {copied ? (
                       <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2.5">
@@ -742,10 +804,8 @@ export default function Home() {
                     )}
                   </AnimatePresence>
                 </button>
-                <button
-                  onClick={handleDownload}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-3.5 bg-white hover:bg-gray-50 text-gray-800 rounded-xl font-bold text-base shadow-sm hover:shadow-md border border-gray-200 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
-                >
+                <button onClick={handleDownload}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-3.5 bg-white hover:bg-gray-50 text-gray-800 rounded-xl font-bold text-base shadow-sm hover:shadow-md border border-gray-200 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
                   <Download className="w-5 h-5 text-teal-600" />
                   Download as .txt
                 </button>
@@ -753,8 +813,268 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
+      </section>
 
-      </main>
+      {/* ── FEATURES SECTION ── */}
+      <section id="features" className="bg-white border-t border-gray-200 py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <span className="text-xs font-bold text-[#4d44e3] uppercase tracking-widest">Features</span>
+            <h2 className="mt-2 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
+              One tool. Every score that matters.
+            </h2>
+            <p className="mt-3 text-gray-500 max-w-xl mx-auto">
+              Stop juggling separate tools. RankPilot AI covers every channel in a single analysis.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                icon: <Search className="w-6 h-6 text-violet-600" />,
+                bg: "bg-violet-50 border-violet-200",
+                iconBg: "bg-violet-100",
+                title: "SEO Optimization",
+                desc: "Improve rankings on Google with keyword structure, meta tags, and content depth analysis.",
+              },
+              {
+                icon: <MessageCircleQuestion className="w-6 h-6 text-blue-600" />,
+                bg: "bg-blue-50 border-blue-200",
+                iconBg: "bg-blue-100",
+                title: "AEO Optimization",
+                desc: "Get featured in answer engines like Bing AI and Google's AI Overviews.",
+              },
+              {
+                icon: <Globe className="w-6 h-6 text-teal-600" />,
+                bg: "bg-teal-50 border-teal-200",
+                iconBg: "bg-teal-100",
+                title: "GEO Optimization",
+                desc: "Optimize for AI platforms like ChatGPT, Perplexity, and Claude that cite sources.",
+              },
+              {
+                icon: <Eye className="w-6 h-6 text-indigo-600" />,
+                bg: "bg-indigo-50 border-indigo-200",
+                iconBg: "bg-indigo-100",
+                title: "AI Visibility Score",
+                desc: "Know if AI will pick your content when users ask questions in your niche.",
+              },
+            ].map(({ icon, bg, iconBg, title, desc }) => (
+              <div key={title} className={`bg-white border rounded-2xl p-6 hover:shadow-md transition-shadow duration-200 ${bg}`}>
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${iconBg}`}>
+                  {icon}
+                </div>
+                <h3 className="font-bold text-gray-900 mb-2">{title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section id="how-it-works" className="py-20 bg-[#f8fafc]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <span className="text-xs font-bold text-[#4d44e3] uppercase tracking-widest">How it Works</span>
+            <h2 className="mt-2 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
+              From paste to publish in 3 steps
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {/* connector line on desktop */}
+            <div className="hidden md:block absolute top-10 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-[#4d44e3]/20 via-[#4d44e3]/40 to-[#4d44e3]/20" />
+            {[
+              {
+                step: "01",
+                icon: <FileText className="w-7 h-7 text-[#4d44e3]" />,
+                title: "Paste Content or URL",
+                desc: "Drop in your article, blog post, product page, or just a website URL. We handle the rest.",
+              },
+              {
+                step: "02",
+                icon: <BarChart2 className="w-7 h-7 text-blue-600" />,
+                title: "Get SEO + AI Scores",
+                desc: "Receive four instant scores — SEO, AEO, GEO, and AI Visibility — with detailed issues and opportunities.",
+              },
+              {
+                step: "03",
+                icon: <Zap className="w-7 h-7 text-teal-600" />,
+                title: "Fix Everything Instantly",
+                desc: 'Click "Fix Everything" and get fully rewritten, AI-optimized content ready to copy and publish.',
+              },
+            ].map(({ step, icon, title, desc }) => (
+              <div key={step} className="relative flex flex-col items-center text-center">
+                <div className="relative z-10 flex items-center justify-center w-20 h-20 bg-white border-2 border-gray-200 rounded-2xl shadow-sm mb-5">
+                  {icon}
+                  <span className="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-[#4d44e3] text-white text-[10px] font-extrabold flex items-center justify-center">
+                    {step.replace("0", "")}
+                  </span>
+                </div>
+                <h3 className="font-bold text-gray-900 text-lg mb-2">{title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed max-w-[220px]">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHY RANKPILOT AI ── */}
+      <section className="bg-white border-t border-gray-200 py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <span className="text-xs font-bold text-[#4d44e3] uppercase tracking-widest">Why RankPilot AI?</span>
+              <h2 className="mt-2 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                Stop using five tools.<br />Use one.
+              </h2>
+              <p className="mt-4 text-gray-500 leading-relaxed">
+                Most teams cobble together separate tools for SEO, answer engines, and AI optimization. RankPilot AI gives you every signal in a single, actionable report.
+              </p>
+              <ul className="mt-8 space-y-4">
+                {[
+                  { icon: <Shield className="w-4 h-4 text-[#4d44e3]" />, text: "One tool instead of many — Ahrefs, Surfer, Clearscope, and more, combined." },
+                  { icon: <TrendingUp className="w-4 h-4 text-[#4d44e3]" />, text: "SEO + AEO + GEO combined — the only tool that covers all four modern signals." },
+                  { icon: <Lightbulb className="w-4 h-4 text-[#4d44e3]" />, text: "Simple and actionable — no dashboards to learn, no jargon. Just clear fixes." },
+                ].map(({ icon, text }) => (
+                  <li key={text} className="flex items-start gap-3">
+                    <div className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg bg-[#4d44e3]/10 border border-[#4d44e3]/20 flex items-center justify-center">
+                      {icon}
+                    </div>
+                    <p className="text-gray-700 text-sm leading-relaxed">{text}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { value: "4×", label: "More AI visibility", color: "text-[#4d44e3]" },
+                { value: "30s", label: "Average analysis time", color: "text-teal-600" },
+                { value: "100%", label: "AI-generated fixes", color: "text-blue-600" },
+                { value: "Free", label: "To get started", color: "text-emerald-600" },
+              ].map(({ value, label, color }) => (
+                <div key={label} className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">
+                  <p className={`text-4xl font-extrabold ${color} font-display`}>{value}</p>
+                  <p className="mt-1 text-xs text-gray-500 font-medium">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section id="pricing" className="py-20 bg-[#f8fafc]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <span className="text-xs font-bold text-[#4d44e3] uppercase tracking-widest">Pricing</span>
+            <h2 className="mt-2 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
+              Simple, transparent pricing
+            </h2>
+            <p className="mt-3 text-gray-500">Start free. Upgrade when you need more.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+            {/* Free */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Free</p>
+              <p className="text-4xl font-extrabold text-gray-900 font-display">$0</p>
+              <p className="text-sm text-gray-500 mt-1 mb-6">Forever free, no credit card needed</p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  "3 content analyses per day",
+                  "SEO, AEO, GEO & AI Visibility scores",
+                  "Issues & opportunities report",
+                  "Basic optimization suggestions",
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-gray-700">
+                    <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <a href="#analyzer"
+                className="block text-center px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-semibold text-sm transition-colors">
+                Get Started Free
+              </a>
+            </div>
+            {/* Pro */}
+            <div className="relative bg-[#4d44e3] rounded-2xl p-8 shadow-lg overflow-hidden">
+              <div className="absolute top-0 right-0 m-4">
+                <span className="px-3 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full">Most Popular</span>
+              </div>
+              <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-2">Pro</p>
+              <p className="text-4xl font-extrabold text-white font-display">$29<span className="text-lg font-medium text-white/70">/mo</span></p>
+              <p className="text-sm text-white/60 mt-1 mb-6">Everything you need to dominate search</p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  "Unlimited analyses",
+                  "Full AI content optimization",
+                  "Bulk URL analysis",
+                  "Export in multiple formats",
+                  "Priority processing",
+                  "API access",
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-white/90">
+                    <Check className="w-4 h-4 text-yellow-300 flex-shrink-0 mt-0.5" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <a href="#analyzer"
+                className="block text-center px-6 py-3 bg-white hover:bg-gray-100 text-[#4d44e3] rounded-xl font-bold text-sm transition-colors shadow-sm">
+                Start Pro Trial
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="bg-gray-100 border-t border-gray-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-8">
+            {/* Brand */}
+            <div className="max-w-xs">
+              <div className="flex items-center gap-2.5 mb-3">
+                <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="RankPilot AI" className="w-7 h-7 rounded-lg" />
+                <span className="font-bold text-gray-900 font-display">
+                  Rank<span className="text-gradient">Pilot</span> AI
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                AI-powered content optimization for SEO, answer engines, and generative AI platforms.
+              </p>
+            </div>
+            {/* Links */}
+            <div className="flex flex-wrap gap-x-12 gap-y-6">
+              <div>
+                <p className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-3">Product</p>
+                <ul className="space-y-2">
+                  {[["#features", "Features"], ["#how-it-works", "How it Works"], ["#pricing", "Pricing"], ["#analyzer", "Try Free"]].map(([href, label]) => (
+                    <li key={href}><a href={href} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">{label}</a></li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-3">Company</p>
+                <ul className="space-y-2">
+                  {[["#", "About"], ["#", "Blog"], ["#", "Contact"]].map(([href, label]) => (
+                    <li key={label}><a href={href} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">{label}</a></li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="mt-10 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-gray-400">© 2025 RankPilot AI. All rights reserved.</p>
+            <div className="flex items-center gap-5 text-xs text-gray-400">
+              <a href="#" className="hover:text-gray-700 transition-colors">Privacy</a>
+              <a href="#" className="hover:text-gray-700 transition-colors">Terms</a>
+              <a href="#" className="hover:text-gray-700 transition-colors">Twitter / X</a>
+              <a href="#" className="hover:text-gray-700 transition-colors">LinkedIn</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
     </div>
   );
 }
