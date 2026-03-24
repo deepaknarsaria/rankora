@@ -20,6 +20,7 @@ import {
   Tag,
   ChevronRight,
   XCircle,
+  Download,
 } from "lucide-react";
 import { useAnalyzeContent, useOptimizeContent } from "@workspace/api-client-react";
 import type { ContentSection, FaqItem, Issue, Opportunity } from "@workspace/api-client-react";
@@ -225,6 +226,24 @@ export default function Home() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast({ title: "Copied!", description: "Optimized content copied to clipboard." });
+  };
+
+  const handleDownload = () => {
+    const data = optimizeMutation.data;
+    if (!data) return;
+    const blob = new Blob([data.rawContent], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const slug = data.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 60);
+    a.href = url;
+    a.download = `${slug || "optimized-content"}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Downloaded!", description: "Your optimized content has been saved as a .txt file." });
   };
 
   const handleReanalyze = () => {
@@ -562,7 +581,14 @@ export default function Home() {
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-sm font-semibold transition-colors border border-primary/20"
                   >
                     {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                    {copied ? "Copied!" : "Copy All"}
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                  <button
+                    onClick={handleDownload}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 text-sm font-semibold transition-colors border border-teal-500/20"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download .txt
                   </button>
                   <button
                     onClick={handleReanalyze}
@@ -716,14 +742,30 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Bottom copy bar */}
-              <div className="flex justify-center pb-8">
+              {/* Bottom export bar */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pb-8">
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white rounded-2xl font-bold text-lg shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-300 hover:-translate-y-1 active:translate-y-0"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-4 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white rounded-2xl font-bold text-lg shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all duration-300 hover:-translate-y-1 active:translate-y-0"
                 >
-                  {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                  {copied ? "Copied to Clipboard!" : "Copy Full Content"}
+                  <AnimatePresence mode="wait">
+                    {copied ? (
+                      <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-300" /> Copied to Clipboard!
+                      </motion.span>
+                    ) : (
+                      <motion.span key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2.5">
+                        <Copy className="w-5 h-5" /> Copy Full Content
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-4 glass-panel hover:bg-white/10 text-foreground rounded-2xl font-bold text-lg border border-white/15 transition-all duration-300 hover:-translate-y-1 active:translate-y-0"
+                >
+                  <Download className="w-5 h-5 text-teal-400" />
+                  Download as .txt
                 </button>
               </div>
             </motion.div>
