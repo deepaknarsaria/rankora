@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Sparkles, 
@@ -19,11 +19,154 @@ import {
   FileText,
   Tag,
   ChevronRight,
+  XCircle,
 } from "lucide-react";
 import { useAnalyzeContent, useOptimizeContent } from "@workspace/api-client-react";
 import type { ContentSection, FaqItem, Issue, Opportunity } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScoreRing } from "@/components/ScoreRing";
+
+/* ── Animated Loading Panel ── */
+const ANALYZE_STEPS = [
+  "Reading your content...",
+  "Checking SEO structure...",
+  "Evaluating answer-engine readiness...",
+  "Scoring AI visibility...",
+  "Identifying opportunities...",
+  "Wrapping up the report...",
+];
+
+const ANALYZE_URL_STEPS = [
+  "Fetching the webpage...",
+  "Extracting content & metadata...",
+  "Checking SEO structure...",
+  "Evaluating answer-engine readiness...",
+  "Scoring AI visibility...",
+  "Building your report...",
+];
+
+const OPTIMIZE_STEPS = [
+  "Studying your content...",
+  "Crafting an optimized title & meta...",
+  "Rewriting with keyword-rich language...",
+  "Structuring headings and bullet points...",
+  "Writing FAQ answers for featured snippets...",
+  "Adding internal linking suggestions...",
+  "Finalizing your content...",
+];
+
+function LoadingPanel({ mode, isUrl }: { mode: "analyze" | "optimize"; isUrl: boolean }) {
+  const [stepIdx, setStepIdx] = useState(0);
+  const steps = mode === "optimize" ? OPTIMIZE_STEPS : isUrl ? ANALYZE_URL_STEPS : ANALYZE_STEPS;
+
+  useEffect(() => {
+    setStepIdx(0);
+    const id = setInterval(() => {
+      setStepIdx(prev => Math.min(prev + 1, steps.length - 1));
+    }, 3200);
+    return () => clearInterval(id);
+  }, [mode, isUrl, steps.length]);
+
+  const label = mode === "optimize"
+    ? "Optimizing your content..."
+    : isUrl
+    ? "Analyzing website..."
+    : "Analyzing content...";
+
+  return (
+    <motion.div
+      key="loading-panel"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      className="glass-panel rounded-[2rem] p-10 flex flex-col items-center gap-8 text-center"
+    >
+      {/* Spinner ring */}
+      <div className="relative flex items-center justify-center w-20 h-20">
+        <svg className="w-full h-full animate-spin" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="34" stroke="currentColor" strokeWidth="6" fill="none" className="text-white/5" />
+          <circle cx="40" cy="40" r="34" stroke="url(#spin-grad)" strokeWidth="6" fill="none"
+            strokeLinecap="round" strokeDasharray="213" strokeDashoffset="160" />
+          <defs>
+            <linearGradient id="spin-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#8b5cf6" />
+              <stop offset="100%" stopColor="#3b82f6" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          {mode === "optimize"
+            ? <Zap className="w-7 h-7 text-primary" />
+            : <Sparkles className="w-7 h-7 text-primary" />}
+        </div>
+      </div>
+
+      {/* Headline */}
+      <div className="space-y-1">
+        <p className="text-xl font-bold text-foreground">{label}</p>
+        <p className="text-sm text-muted-foreground">This usually takes 15–30 seconds</p>
+      </div>
+
+      {/* Animated step messages */}
+      <div className="w-full max-w-sm">
+        <div className="relative h-6 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={stepIdx}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="absolute inset-0 text-sm text-primary/80 font-medium text-center"
+            >
+              {steps[stepIdx]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
+        {/* Step dots */}
+        <div className="flex items-center justify-center gap-1.5 mt-4">
+          {steps.map((_, i) => (
+            <motion.span
+              key={i}
+              animate={{ 
+                scale: i === stepIdx ? 1.3 : 1,
+                backgroundColor: i <= stepIdx ? "rgb(139 92 246)" : "rgb(255 255 255 / 0.1)"
+              }}
+              transition={{ duration: 0.25 }}
+              className="w-1.5 h-1.5 rounded-full"
+            />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ── Inline Error Card ── */
+function ErrorCard({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <motion.div
+      key="error-card"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      className="flex items-start gap-4 bg-destructive/10 border border-destructive/30 rounded-2xl p-6"
+    >
+      <XCircle className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-destructive mb-1">Something went wrong</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
+      </div>
+      <button
+        onClick={onRetry}
+        className="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-destructive/20 hover:bg-destructive/30 text-destructive transition-colors"
+      >
+        Try again
+      </button>
+    </motion.div>
+  );
+}
 
 function isUrl(input: string): boolean {
   return /^https?:\/\//i.test(input.trim());
@@ -33,38 +176,46 @@ export default function Home() {
   const [content, setContent] = useState("");
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const { toast } = useToast();
   const inputIsUrl = isUrl(content);
 
   const analyzeMutation = useAnalyzeContent({
     mutation: {
-      onSuccess: () => setHasAnalyzed(true),
-      onError: (err: any) => toast({ 
-        title: "Analysis Failed", 
-        description: err.message || "An error occurred during analysis.", 
-        variant: "destructive" 
-      })
+      onSuccess: () => {
+        setHasAnalyzed(true);
+        setAnalyzeError(null);
+        toast({ title: "Analysis complete!", description: "Your content has been fully scored." });
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error || err?.message || "An error occurred during analysis.";
+        setAnalyzeError(msg);
+      }
     }
   });
 
   const optimizeMutation = useOptimizeContent({
     mutation: {
-      onError: (err: any) => toast({ 
-        title: "Optimization Failed", 
-        description: err.message || "An error occurred during optimization.", 
-        variant: "destructive" 
-      })
+      onSuccess: () => setOptimizeError(null),
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error || err?.message || "An error occurred during optimization.";
+        setOptimizeError(msg);
+      }
     }
   });
 
   const handleAnalyze = () => {
     if (!content.trim()) return;
     optimizeMutation.reset();
+    setAnalyzeError(null);
+    setOptimizeError(null);
     analyzeMutation.mutate({ data: { content } });
   };
 
   const handleOptimize = () => {
     if (!content.trim()) return;
+    setOptimizeError(null);
     optimizeMutation.mutate({ data: { content } });
   };
 
@@ -195,6 +346,34 @@ export default function Home() {
             </div>
           </motion.div>
         )}
+
+        {/* Loading Panels */}
+        <AnimatePresence mode="wait">
+          {analyzeMutation.isPending && (
+            <LoadingPanel key="analyze-loading" mode="analyze" isUrl={inputIsUrl} />
+          )}
+          {optimizeMutation.isPending && (
+            <LoadingPanel key="optimize-loading" mode="optimize" isUrl={inputIsUrl} />
+          )}
+        </AnimatePresence>
+
+        {/* Error Cards */}
+        <AnimatePresence>
+          {analyzeError && !analyzeMutation.isPending && (
+            <ErrorCard
+              key="analyze-error"
+              message={analyzeError}
+              onRetry={() => { setAnalyzeError(null); handleAnalyze(); }}
+            />
+          )}
+          {optimizeError && !optimizeMutation.isPending && (
+            <ErrorCard
+              key="optimize-error"
+              message={optimizeError}
+              onRetry={() => { setOptimizeError(null); handleOptimize(); }}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Analysis Results */}
         <AnimatePresence>
