@@ -573,6 +573,22 @@ export default function Home() {
                 placeholder="e.g. home remodel Hamilton, renovation contractor"
                 className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4d44e3]/30 focus:border-[#4d44e3]/50 transition-all"
               />
+              <p className="text-xs text-gray-400 mt-1.5 pl-1">We'll analyze and optimize your content for these keywords</p>
+
+              {/* Removable selected keyword chips */}
+              {selectedKeywords.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-gray-500">Optimizing for:</span>
+                  {selectedKeywords.map(kw => (
+                    <span key={kw} className="flex items-center gap-1.5 px-3 py-1 bg-[#4d44e3]/10 border border-[#4d44e3]/25 text-[#4d44e3] text-xs font-semibold rounded-full">
+                      {kw}
+                      <button onClick={() => toggleKeyword(kw)} className="text-[#4d44e3]/60 hover:text-[#4d44e3] transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-[#4d44e3]/30 focus-within:border-[#4d44e3]/50 transition-all">
@@ -702,146 +718,215 @@ export default function Home() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white border border-gray-200 shadow-sm rounded-2xl p-7 space-y-6"
+                  className="bg-white border border-gray-200 shadow-sm rounded-2xl overflow-hidden"
                 >
-                  <div className="flex items-center gap-3">
+                  {/* Card header */}
+                  <div className="flex items-center gap-3 px-7 pt-7 pb-5">
                     <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#4d44e3]/10 border border-[#4d44e3]/20">
                       <Tag className="w-4 h-4 text-[#4d44e3]" />
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-gray-900 leading-none">Keyword Intelligence</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">Detected keywords · relevance scores · suggestions</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Detected keywords · optimization scores · recommendations</p>
                     </div>
                   </div>
 
-                  {/* Detected Keywords */}
-                  {analysisData.detectedKeywords && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Detected in Your Content</p>
-                      <div className="flex flex-wrap gap-2">
-                        {analysisData.detectedKeywords.primary && (
-                          <button
-                            onClick={() => toggleKeyword(analysisData.detectedKeywords!.primary)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                              selectedKeywords.includes(analysisData.detectedKeywords.primary)
-                                ? "bg-[#4d44e3] text-white border-[#4d44e3]"
-                                : "bg-[#4d44e3]/8 text-[#4d44e3] border-[#4d44e3]/30 hover:bg-[#4d44e3]/15"
-                            }`}
-                          >
-                            <TrendingUp className="w-3 h-3" />
-                            {analysisData.detectedKeywords.primary}
-                            <span className="opacity-70 font-normal">Primary</span>
-                          </button>
-                        )}
-                        {(analysisData.detectedKeywords.secondary ?? []).map((kw, i) => (
-                          <button
-                            key={i}
-                            onClick={() => toggleKeyword(kw)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                              selectedKeywords.includes(kw)
-                                ? "bg-[#4d44e3] text-white border-[#4d44e3]"
-                                : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                            }`}
-                          >
-                            {kw}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Keyword Analysis Table */}
-                  {analysisData.keywordAnalysis && analysisData.keywordAnalysis.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                        {targetKeywords.trim() ? "Your Keyword Scores" : "Top Keyword Coverage"}
-                      </p>
-                      <div className="space-y-2.5">
-                        {analysisData.keywordAnalysis.map((item, i) => {
-                          const statusColor = item.status === "Good"
-                            ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                            : item.status === "Missing"
-                            ? "bg-red-100 text-red-700 border-red-200"
-                            : "bg-amber-100 text-amber-700 border-amber-200";
-                          const barColor = item.status === "Good" ? "bg-emerald-500" : item.status === "Missing" ? "bg-red-400" : "bg-amber-400";
-                          return (
-                            <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
-                              <span className="text-sm text-gray-800 font-medium min-w-0 flex-1 truncate">{item.keyword}</span>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                  <div className={`h-full rounded-full ${barColor}`} style={{ width: `${item.score}%` }} />
-                                </div>
-                                <span className="text-xs text-gray-500 w-7 text-right">{item.score}%</span>
-                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${statusColor}`}>{item.status}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Suggested Keywords */}
-                  {analysisData.suggestedKeywords && analysisData.suggestedKeywords.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Suggested Keywords to Target</p>
-                      <div className="flex flex-wrap gap-2">
-                        {analysisData.suggestedKeywords.map((kw, i) => (
-                          <button
-                            key={i}
-                            onClick={() => toggleKeyword(kw)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                              selectedKeywords.includes(kw)
-                                ? "bg-[#4d44e3] text-white border-[#4d44e3]"
-                                : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
-                            }`}
-                          >
-                            {selectedKeywords.includes(kw) ? <span className="flex items-center gap-1"><Check className="w-3 h-3" />{kw}</span> : `+ ${kw}`}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Custom keyword + Optimize button */}
-                  <div className="space-y-4 pt-2 border-t border-gray-100">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={customKeyword}
-                        onChange={e => setCustomKeyword(e.target.value)}
-                        onKeyDown={e => e.key === "Enter" && addCustomKeyword()}
-                        placeholder="Add custom keyword..."
-                        className="flex-1 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4d44e3]/30 focus:border-[#4d44e3]/50 transition-all"
-                      />
-                      <button
-                        onClick={addCustomKeyword}
-                        disabled={!customKeyword.trim()}
-                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg border border-gray-200 transition-colors disabled:opacity-50"
-                      >
-                        Add
-                      </button>
-                    </div>
-
-                    {selectedKeywords.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Check className="w-3.5 h-3.5 text-[#4d44e3]" />
-                          <span>Optimizing for: </span>
-                          <span className="font-semibold text-gray-800">{selectedKeywords.join(", ")}</span>
+                  <div className="px-7 pb-7 space-y-7">
+                    {/* Detected Keywords */}
+                    {analysisData.detectedKeywords && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Detected in Your Content</p>
+                        <div className="flex flex-wrap gap-2">
+                          {analysisData.detectedKeywords.primary && (
+                            <button
+                              onClick={() => toggleKeyword(analysisData.detectedKeywords!.primary)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                                selectedKeywords.includes(analysisData.detectedKeywords.primary)
+                                  ? "bg-[#4d44e3] text-white border-[#4d44e3]"
+                                  : "bg-[#4d44e3]/8 text-[#4d44e3] border-[#4d44e3]/30 hover:bg-[#4d44e3]/15"
+                              }`}
+                            >
+                              <TrendingUp className="w-3 h-3" />
+                              {analysisData.detectedKeywords.primary}
+                              {selectedKeywords.includes(analysisData.detectedKeywords.primary)
+                                ? <X className="w-3 h-3 opacity-70" />
+                                : <span className="opacity-60 font-normal">Primary</span>}
+                            </button>
+                          )}
+                          {(analysisData.detectedKeywords.secondary ?? []).map((kw, i) => (
+                            <button
+                              key={i}
+                              onClick={() => toggleKeyword(kw)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                                selectedKeywords.includes(kw)
+                                  ? "bg-[#4d44e3] text-white border-[#4d44e3]"
+                                  : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                              }`}
+                            >
+                              {kw}
+                              {selectedKeywords.includes(kw) && <X className="w-3 h-3 opacity-70" />}
+                            </button>
+                          ))}
                         </div>
-                        <button
-                          onClick={() => handleOptimize(selectedKeywords.join(", "))}
-                          disabled={optimizeMutation.isPending}
-                          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-sm shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
-                        >
-                          {optimizeMutation.isPending
-                            ? <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, ease: "linear", duration: 1 }}><RefreshCw className="w-4 h-4" /></motion.div> Optimizing...</>
-                            : <><Zap className="w-4 h-4 text-yellow-300" /> Optimize for Selected Keywords</>
-                          }
-                        </button>
                       </div>
                     )}
+
+                    {/* Keyword Score Table — "keyword → X% optimized" */}
+                    {analysisData.keywordAnalysis && analysisData.keywordAnalysis.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                          {targetKeywords.trim() ? "Your Keyword Optimization Scores" : "Top Keyword Coverage"}
+                        </p>
+                        <div className="space-y-2.5">
+                          {analysisData.keywordAnalysis.map((item, i) => {
+                            const statusColor = item.status === "Good"
+                              ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                              : item.status === "Missing"
+                              ? "bg-red-100 text-red-700 border-red-200"
+                              : "bg-amber-100 text-amber-700 border-amber-200";
+                            const barColor = item.status === "Good" ? "bg-emerald-500" : item.status === "Missing" ? "bg-red-400" : "bg-amber-500";
+                            const scoreLabel = item.status === "Good" ? "optimized" : item.status === "Missing" ? "not found" : "needs work";
+                            return (
+                              <div key={i} className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3.5">
+                                <div className="flex items-center justify-between gap-3 mb-2">
+                                  <span className="text-sm text-gray-800 font-semibold min-w-0 truncate">{item.keyword}</span>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <span className="text-sm font-bold text-gray-700">{item.score}%</span>
+                                    <span className="text-xs text-gray-400">{scoreLabel}</span>
+                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${statusColor}`}>{item.status}</span>
+                                  </div>
+                                </div>
+                                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                  <motion.div
+                                    className={`h-full rounded-full ${barColor}`}
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${item.score}%` }}
+                                    transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recommended Keywords to Rank */}
+                    {analysisData.suggestedKeywords && analysisData.suggestedKeywords.length > 0 && (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recommended Keywords to Rank</p>
+                          <span className="text-xs text-gray-400">Click to add → optimize</span>
+                        </div>
+                        <div className="space-y-2.5">
+                          {analysisData.suggestedKeywords.map((kw, i) => {
+                            const wordCount = kw.trim().split(/\s+/).length;
+                            const difficulty = wordCount >= 4 ? "Easy" : wordCount === 3 ? "Medium" : "Hard";
+                            const potential = i < 2 ? "High" : i < 4 ? "Medium" : "Low";
+                            const diffColor = difficulty === "Easy" ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                              : difficulty === "Medium" ? "bg-amber-100 text-amber-700 border-amber-200"
+                              : "bg-red-100 text-red-700 border-red-200";
+                            const potColor = potential === "High" ? "bg-violet-100 text-violet-700 border-violet-200"
+                              : potential === "Medium" ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : "bg-gray-100 text-gray-600 border-gray-200";
+                            const isSelected = selectedKeywords.includes(kw);
+                            return (
+                              <div
+                                key={i}
+                                className={`flex items-center gap-3 rounded-xl px-4 py-3 border transition-all ${
+                                  isSelected
+                                    ? "bg-[#4d44e3]/6 border-[#4d44e3]/30"
+                                    : "bg-gray-50 border-gray-100 hover:border-gray-200"
+                                }`}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-800 truncate">{kw}</p>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${diffColor}`}>
+                                    {difficulty}
+                                  </span>
+                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${potColor}`}>
+                                    {potential} potential
+                                  </span>
+                                  <button
+                                    onClick={() => toggleKeyword(kw)}
+                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                      isSelected
+                                        ? "bg-[#4d44e3] text-white"
+                                        : "bg-white border border-gray-200 text-gray-700 hover:border-[#4d44e3]/40 hover:text-[#4d44e3]"
+                                    }`}
+                                  >
+                                    {isSelected ? <><Check className="w-3 h-3" /> Added</> : <>+ Add</>}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Custom keyword input */}
+                    <div className="pt-2 border-t border-gray-100 space-y-4">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={customKeyword}
+                          onChange={e => setCustomKeyword(e.target.value)}
+                          onKeyDown={e => e.key === "Enter" && addCustomKeyword()}
+                          placeholder="Add your own keyword..."
+                          className="flex-1 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4d44e3]/30 focus:border-[#4d44e3]/50 transition-all"
+                        />
+                        <button
+                          onClick={addCustomKeyword}
+                          disabled={!customKeyword.trim()}
+                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg border border-gray-200 transition-colors disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </div>
+
+                      {/* Optimize for selected CTA */}
+                      {selectedKeywords.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-[#4d44e3]/5 border border-[#4d44e3]/20 rounded-xl p-4 space-y-3"
+                        >
+                          <div>
+                            <p className="text-xs font-semibold text-[#4d44e3] mb-2 flex items-center gap-1.5">
+                              <Check className="w-3.5 h-3.5" /> Optimizing for {selectedKeywords.length} keyword{selectedKeywords.length > 1 ? "s" : ""}:
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {selectedKeywords.map(kw => (
+                                <span key={kw} className="flex items-center gap-1 px-2.5 py-1 bg-white border border-[#4d44e3]/20 text-[#4d44e3] text-xs font-semibold rounded-full">
+                                  {kw}
+                                  <button onClick={() => toggleKeyword(kw)} className="opacity-50 hover:opacity-100 transition-opacity">
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleOptimize(selectedKeywords.join(", "))}
+                            disabled={optimizeMutation.isPending}
+                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-sm shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
+                          >
+                            {optimizeMutation.isPending
+                              ? <>
+                                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, ease: "linear", duration: 1 }}>
+                                    <RefreshCw className="w-4 h-4" />
+                                  </motion.div>
+                                  Optimizing content for selected keywords...
+                                </>
+                              : <><Zap className="w-4 h-4 text-yellow-300" /> Optimize for Selected Keywords</>
+                            }
+                          </button>
+                        </motion.div>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               )}
