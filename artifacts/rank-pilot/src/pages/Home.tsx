@@ -15,11 +15,16 @@ import { useToast } from "@/hooks/use-toast";
 import { ScoreRing } from "@/components/ScoreRing";
 import { CategoryBadge } from "@/components/CategoryBadge";
 
+function isUrl(input: string): boolean {
+  return /^https?:\/\//i.test(input.trim());
+}
+
 export default function Home() {
   const [content, setContent] = useState("");
   const [optimizedText, setOptimizedText] = useState("");
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const { toast } = useToast();
+  const inputIsUrl = isUrl(content);
 
   const analyzeMutation = useAnalyzeContent({
     mutation: {
@@ -137,13 +142,20 @@ export default function Home() {
               value={content}
               onChange={handleContentChange}
               className="w-full h-64 md:h-80 bg-transparent border-0 resize-none p-6 text-lg md:text-xl placeholder:text-muted-foreground/40 focus:outline-none focus:ring-0 text-foreground leading-relaxed"
-              placeholder="Paste your blog post, article, or landing page copy here to uncover optimization opportunities..."
+              placeholder="Paste your content OR a website URL (https://...)..."
             />
             <div className="absolute bottom-6 right-6 flex items-center gap-4">
               {content.length > 0 && (
-                 <span className="text-sm text-muted-foreground font-medium mr-2">
-                   {content.trim().split(/\s+/).length} words
-                 </span>
+                inputIsUrl ? (
+                  <span className="text-sm text-primary/80 font-medium mr-2 flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    URL detected
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground font-medium mr-2">
+                    {content.trim().split(/\s+/).length} words
+                  </span>
+                )
               )}
               <button
                 onClick={handleAnalyze}
@@ -157,7 +169,9 @@ export default function Home() {
                 ) : (
                   <Sparkles className="w-5 h-5" />
                 )}
-                {analyzeMutation.isPending ? "Analyzing..." : "Analyze Content"}
+                {analyzeMutation.isPending
+                  ? (inputIsUrl ? "Analyzing website..." : "Analyzing text...")
+                  : "Analyze Content"}
               </button>
             </div>
           </motion.div>
@@ -271,7 +285,9 @@ export default function Home() {
                   ) : (
                     <Zap className="w-6 h-6 group-hover:text-yellow-500 transition-colors" />
                   )}
-                  {optimizeMutation.isPending ? "Optimizing Content..." : "Fix Everything Automatically"}
+                  {optimizeMutation.isPending
+                    ? (inputIsUrl ? "Fetching & optimizing website..." : "Optimizing Content...")
+                    : "Fix Everything Automatically"}
                 </button>
               </div>
             </motion.div>

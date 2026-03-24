@@ -1,0 +1,223 @@
+Build a full-stack SaaS web app called "RankPilot AI" — an AI-powered content and website optimization tool for SEO, AEO, and GEO.
+
+---
+
+🧠 CORE FUNCTIONALITY:
+
+Users can:
+
+1. Paste content OR a website URL
+2. Analyze content for:
+
+   * SEO (Search Engine Optimization)
+   * AEO (Answer Engine Optimization)
+   * GEO (Generative Engine Optimization)
+3. Get:
+
+   * SEO score (0–100)
+   * AEO score (0–100)
+   * GEO score (0–100)
+   * Issues list
+   * Suggestions with explanations
+4. Click "Fix Everything" to generate optimized content
+
+---
+
+⚙️ TECH STACK:
+
+Frontend:
+
+* React (with Tailwind CSS)
+
+Backend:
+
+* Node.js with Express
+
+Packages to install:
+
+* axios (for fetching URLs)
+* cheerio (for parsing HTML)
+* cors
+* body-parser
+* dotenv
+
+AI:
+
+* OpenAI API (use environment variable)
+
+---
+
+📦 INSTALL THESE PACKAGES:
+
+npm install express axios cheerio cors body-parser dotenv
+
+---
+
+🔐 ENV SETUP:
+
+Create .env file:
+
+OPENAI_API_KEY=your_api_key_here
+
+---
+
+🧩 BACKEND IMPLEMENTATION:
+
+Create Express server with 2 endpoints:
+
+---
+
+1️⃣ POST /analyze
+
+Logic:
+
+* Accept input: { content }
+
+* If content starts with "http":
+  → Treat as URL
+  → Fetch HTML using axios
+  → Load HTML with cheerio
+  → Remove script/style tags
+  → Extract clean text from body
+
+* Else:
+  → Use input as content
+
+* Send this prompt to OpenAI:
+
+"Analyze the following content for SEO, AEO, and GEO optimization.
+
+Return ONLY JSON in this format:
+{
+"seoScore": number (0-100),
+"aeoScore": number (0-100),
+"geoScore": number (0-100),
+"issues": ["..."],
+"suggestions": ["... with explanation"]
+}
+
+Content:
+[CONTENT]"
+
+* Return parsed JSON
+
+* Add error handling:
+
+  * Invalid URL
+  * Failed fetch
+  * Empty content
+
+---
+
+2️⃣ POST /optimize
+
+Logic:
+
+* Accept input: { content }
+
+* If URL:
+  → Fetch + extract content (same as above)
+
+* Send prompt:
+
+"Rewrite and optimize the following content for SEO, AEO, and GEO.
+
+Make it:
+
+* Clear and structured
+* Keyword optimized
+* Answer-focused (AEO)
+* AI-friendly (GEO)
+* Include headings, bullet points, FAQs if useful
+
+Content:
+[CONTENT]"
+
+* Return optimized content
+
+---
+
+🎨 FRONTEND IMPLEMENTATION:
+
+Single page React app with:
+
+---
+
+1️⃣ Input Section:
+
+* Large textarea
+* Placeholder:
+  "Paste your content OR website URL..."
+
+---
+
+2️⃣ Analyze Button:
+
+* On click:
+  → Call /analyze API
+  → Show loading spinner
+
+---
+
+3️⃣ Result Section:
+
+Display:
+
+* SEO Score (card)
+
+* AEO Score (card)
+
+* GEO Score (card)
+
+* Issues list (bullets)
+
+* Suggestions (with explanation)
+
+---
+
+4️⃣ Fix Everything Button:
+
+* Calls /optimize API
+* Show optimized content in textarea
+* Add "Copy" button
+
+---
+
+5️⃣ Smart UI Behavior:
+
+* Detect if input is URL:
+  → Show “Analyzing website content…”
+* Else:
+  → Show “Analyzing text…”
+
+---
+
+⚡ EXTRA FEATURES:
+
+* Loading state (spinner)
+* Error messages
+* Clean SaaS UI (cards, spacing)
+* Responsive design
+
+---
+
+🎯 GOAL:
+
+User flow:
+
+Paste URL or content → Click Analyze → See SEO/AEO/GEO scores + suggestions → Click Fix Everything → Get optimized content
+
+---
+
+IMPORTANT:
+
+* Keep code simple and clean
+* Focus on working functionality
+* Do NOT build complex SEO crawler
+* Use AI for scoring and suggestions
+
+---
+
+END RESULT:
+
+A working SaaS MVP where users can analyze any webpage or content and instantly optimize it for modern search (Google + AI engines).
