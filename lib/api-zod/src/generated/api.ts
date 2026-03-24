@@ -21,6 +21,7 @@ export const HealthCheckResponse = zod.object({
  */
 export const AnalyzeContentBody = zod.object({
   content: zod.string().describe("The content or URL to analyze"),
+  keywords: zod.string().optional().describe("Comma-separated target keywords (optional)"),
 });
 
 export const AnalyzeContentResponse = zod.object({
@@ -30,6 +31,16 @@ export const AnalyzeContentResponse = zod.object({
   aiVisibilityScore: zod
     .number()
     .describe("Overall AI visibility score from 0 to 100"),
+  detectedKeywords: zod.object({
+    primary: zod.string(),
+    secondary: zod.array(zod.string()),
+  }).optional(),
+  keywordAnalysis: zod.array(zod.object({
+    keyword: zod.string(),
+    score: zod.number(),
+    status: zod.enum(["Good", "Needs Improvement", "Missing"]),
+  })).optional(),
+  suggestedKeywords: zod.array(zod.string()).optional(),
   issues: zod
     .array(
       zod.object({
@@ -61,6 +72,7 @@ export const AnalyzeContentResponse = zod.object({
  */
 export const OptimizeContentBody = zod.object({
   content: zod.string().describe("The content or URL to optimize"),
+  keywords: zod.string().optional().describe("Comma-separated keywords to optimize for (optional)"),
 });
 
 export const OptimizeContentResponse = zod.object({

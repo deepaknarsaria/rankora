@@ -12,6 +12,8 @@ export interface HealthStatus {
 export interface AnalyzeRequest {
   /** The content or URL to analyze */
   content: string;
+  /** Comma-separated target keywords (optional) */
+  keywords?: string;
 }
 
 export type IssuePriority = (typeof IssuePriority)[keyof typeof IssuePriority];
@@ -53,6 +55,17 @@ export interface Opportunity {
   priority: OpportunityPriority;
 }
 
+export interface KeywordAnalysisItem {
+  keyword: string;
+  score: number;
+  status: "Good" | "Needs Improvement" | "Missing";
+}
+
+export interface DetectedKeywords {
+  primary: string;
+  secondary: string[];
+}
+
 export interface AnalyzeResponse {
   /** SEO score from 0 to 100 */
   seoScore: number;
@@ -62,6 +75,9 @@ export interface AnalyzeResponse {
   geoScore: number;
   /** Overall AI visibility score from 0 to 100 */
   aiVisibilityScore: number;
+  detectedKeywords?: DetectedKeywords;
+  keywordAnalysis?: KeywordAnalysisItem[];
+  suggestedKeywords?: string[];
   /** List of identified issues */
   issues: Issue[];
   /** List of actionable opportunities */
@@ -71,6 +87,8 @@ export interface AnalyzeResponse {
 export interface OptimizeRequest {
   /** The content or URL to optimize */
   content: string;
+  /** Comma-separated keywords to optimize for (optional) */
+  keywords?: string;
 }
 
 export interface FaqItem {

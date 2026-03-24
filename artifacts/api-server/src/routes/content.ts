@@ -144,16 +144,37 @@ function normalizeP(p: string) {
   return (v === "High" || v === "Medium" || v === "Low") ? v : "Medium";
 }
 
-async function runAnalysis(content: string) {
+function normalizeKwStatus(s: string): "Good" | "Needs Improvement" | "Missing" {
+  if (s === "Good" || s === "Needs Improvement" || s === "Missing") return s;
+  return "Needs Improvement";
+}
+
+async function runAnalysis(content: string, keywords?: string) {
+  const hasKeywords = !!(keywords && keywords.trim().length > 0);
+
   const prompt = `Analyze the following content for SEO, AEO, and GEO optimization.
 
-Return ONLY JSON in this format:
+${hasKeywords ? `User's target keywords: ${keywords}` : ""}
+
+Return ONLY JSON in this exact format (no markdown, no code blocks):
 
 {
   "seoScore": number (0-100),
   "aeoScore": number (0-100),
   "geoScore": number (0-100),
   "aiVisibilityScore": number (0-100),
+  "detectedKeywords": {
+    "primary": "the single most important keyword from the content",
+    "secondary": ["keyword2", "keyword3", "keyword4"]
+  },
+  "keywordAnalysis": [
+    {
+      "keyword": "keyword phrase",
+      "score": number (0-100, how well the content is optimized for this keyword),
+      "status": "Good | Needs Improvement | Missing"
+    }
+  ],
+  "suggestedKeywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
   "issues": [
     {
       "title": "Short issue title",
@@ -174,10 +195,13 @@ Return ONLY JSON in this format:
 }
 
 Rules:
+* detectedKeywords: identify primary and 3-5 secondary keywords from the content itself
+* keywordAnalysis: ${hasKeywords
+    ? "evaluate each of the user's target keywords — score how well the content covers them"
+    : "analyze the top 3-5 detected keywords"}
+* suggestedKeywords: recommend 5 high-value keyword opportunities the content is missing or under-optimized for
 * Keep language simple and beginner-friendly
-* Make suggestions actionable
-* Include real examples wherever possible
-* Prioritize high-impact SEO and AI optimization
+* Make all suggestions actionable with real examples
 
 Content:
 ${content}`;
@@ -188,7 +212,7 @@ ${content}`;
     messages: [
       {
         role: "system",
-        content: "You are an expert content optimization analyst. Always respond with valid JSON only, no markdown, no code blocks.",
+        content: "You are an expert SEO content analyst. Always respond with valid JSON only, no markdown, no code blocks.",
       },
       { role: "user", content: prompt },
     ],
@@ -202,6 +226,24 @@ ${content}`;
     aeoScore: Number(analysis.aeoScore) || 0,
     geoScore: Number(analysis.geoScore) || 0,
     aiVisibilityScore: Number(analysis.aiVisibilityScore) || 0,
+    detectedKeywords: analysis.detectedKeywords
+      ? {
+          primary: String(analysis.detectedKeywords.primary ?? ""),
+          secondary: Array.isArray(analysis.detectedKeywords.secondary)
+            ? analysis.detectedKeywords.secondary.map(String)
+            : [],
+        }
+      : { primary: "", secondary: [] },
+    keywordAnalysis: Array.isArray(analysis.keywordAnalysis)
+      ? analysis.keywordAnalysis.map((k: any) => ({
+          keyword: String(k.keyword ?? ""),
+          score: Number(k.score) || 0,
+          status: normalizeKwStatus(String(k.status ?? "")),
+        }))
+      : [],
+    suggestedKeywords: Array.isArray(analysis.suggestedKeywords)
+      ? analysis.suggestedKeywords.map(String)
+      : [],
     issues: Array.isArray(analysis.issues)
       ? analysis.issues.map((issue: any) => ({
           title: String(issue.title ?? ""),
@@ -246,7 +288,7 @@ router.post("/analyze", async (req, res) => {
     return;
   }
 
-  const { content: rawInput } = parseResult.data;
+  const { content: rawInput, keywords } = parseResult.data;
 
   if (!rawInput || rawInput.trim().length < 3) {
     res.status(400).json({ error: "Please provide content or a URL to analyze." });
@@ -267,7 +309,7 @@ router.post("/analyze", async (req, res) => {
   }
 
   try {
-    const analysis = await runAnalysis(content);
+    const analysis = await runAnalysis(content, keywords);
     deductCredits(ip, 1);
     res.json({ ...analysis, creditsRemaining: getCredits(ip), creditsTotal: FREE_CREDITS });
   } catch (err) {
@@ -324,8 +366,10 @@ router.post("/analyze-file", uploadMiddleware, async (req, res) => {
     return;
   }
 
+  const keywords = typeof req.body?.keywords === "string" ? req.body.keywords : undefined;
+
   try {
-    const analysis = await runAnalysis(extractedContent);
+    const analysis = await runAnalysis(extractedContent, keywords);
     deductCredits(ip, 1);
     res.json({ ...analysis, extractedContent, creditsRemaining: getCredits(ip), creditsTotal: FREE_CREDITS });
   } catch (err) {
@@ -350,7 +394,7 @@ router.post("/optimize", async (req, res) => {
     return;
   }
 
-  const { content: rawInput } = parseResult.data;
+  const { content: rawInput, keywords } = parseResult.data;
 
   if (!rawInput || rawInput.trim().length < 3) {
     res.status(400).json({ error: "Please provide content or a URL to optimize." });
@@ -370,9 +414,19 @@ router.post("/optimize", async (req, res) => {
     return;
   }
 
+  const hasKeywords = !!(keywords && keywords.trim().length > 0);
+
   try {
     const prompt = `Rewrite and optimize the following content for SEO, AEO, and GEO.
 
+${hasKeywords ? `IMPORTANT: Optimize specifically for these target keywords: ${keywords}
+Ensure:
+- Natural usage of these keywords throughout the content
+- Primary keyword placed in the title, introduction, and key headings
+- Secondary keywords used in subheadings and body text naturally
+- FAQ section addresses questions people search for around these keywords
+- Semantic variations of the keywords are used for broader coverage
+` : ""}
 Return ONLY valid JSON (no markdown, no code blocks) in this exact structure:
 
 {

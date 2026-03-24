@@ -1,0 +1,159 @@
+Add keyword-based optimization system to the analyzer.
+
+IMPORTANT:
+
+* Do NOT break existing functionality
+* Extend current flow
+
+---
+
+🧩 FRONTEND CHANGES:
+
+1. Add keyword input field above main textarea:
+
+Label:
+"Target Keywords (optional)"
+
+Input:
+
+* Allow multiple keywords (comma-separated)
+* Placeholder:
+  "e.g. home remodel Hamilton, renovation contractor"
+
+---
+
+2. Add keyword suggestion section (after analysis):
+
+If user DID NOT enter keywords:
+
+* Show:
+  "Suggested Keywords"
+* List:
+
+  * Primary keyword
+  * Secondary keywords
+
+Allow:
+
+* Multi-select keywords
+* Option to add custom keyword manually
+
+---
+
+3. Add "Optimize for Selected Keywords" button
+
+---
+
+🧩 BACKEND CHANGES:
+
+Update /analyze endpoint:
+
+---
+
+AI PROMPT:
+
+"Analyze the content for SEO, AEO, GEO.
+
+1. Identify:
+
+* Primary keyword
+* Secondary keywords
+
+2. If user provided keywords:
+
+* Evaluate how well content is optimized for those keywords
+* Return keyword relevance score
+
+3. Suggest:
+
+* Missing keywords
+* Better keyword opportunities
+
+Return JSON:
+
+{
+"seoScore": number,
+"aeoScore": number,
+"geoScore": number,
+"aiVisibilityScore": number,
+
+"detectedKeywords": {
+"primary": "",
+"secondary": []
+},
+
+"keywordAnalysis": [
+{
+"keyword": "",
+"score": number,
+"status": "Good | Needs Improvement | Missing"
+}
+],
+
+"suggestedKeywords": [],
+
+"issues": [],
+"opportunities": []
+}
+
+Content:
+[CONTENT]
+User Keywords:
+[KEYWORDS]
+"
+
+---
+
+🧩 UPDATE /optimize ENDPOINT:
+
+Modify prompt:
+
+"Rewrite content optimized specifically for these keywords:
+
+[SELECTED KEYWORDS]
+
+Ensure:
+
+* Natural keyword usage
+* Proper placement in headings
+* FAQ inclusion
+* Semantic keyword coverage"
+
+---
+
+🧠 LOGIC FLOW:
+
+IF user enters keywords:
+→ analyze based on keywords
+ELSE:
+→ detect keywords → suggest → allow selection
+
+---
+
+⚡ UX IMPROVEMENTS:
+
+* Show:
+  "Optimizing for: [selected keywords]"
+* Highlight keyword score visually
+* Show keyword improvement suggestions
+
+---
+
+🎯 GOAL:
+
+Make tool keyword-driven:
+
+* Detect keywords automatically
+* Suggest better keywords
+* Allow manual keyword input
+* Optimize content based on keywords
+
+---
+
+RESULT:
+
+A powerful SEO tool that:
+
+* Works like Surfer + ChatGPT combined
+* Focuses on ranking for specific keywords
+* Provides actionable keyword optimization
