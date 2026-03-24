@@ -1,0 +1,159 @@
+Build a full-stack SaaS web application called "RankPilot AI" — an AI-powered content optimization tool for SEO, AEO, and GEO.
+
+Use:
+
+* Frontend: React (modern UI with Tailwind CSS)
+* Backend: Node.js with Express
+* Database: simple in-memory or SQLite (for MVP)
+* AI Integration: OpenAI API (use placeholder for API key)
+
+---
+
+🧠 APP OVERVIEW:
+
+The app allows users to:
+
+1. Paste content or a URL
+2. Analyze content for:
+
+   * SEO (Search Engine Optimization)
+   * AEO (Answer Engine Optimization)
+   * GEO (Generative Engine Optimization)
+3. Get:
+
+   * SEO score
+   * AEO score
+   * GEO score
+   * Issues list
+   * Suggestions with explanation
+4. Click "Fix Everything" to generate fully optimized content
+
+---
+
+🎯 CORE FEATURES:
+
+1. Input Box:
+
+* Large textarea for content OR URL input
+* Button: "Analyze Content"
+
+2. Analysis Engine (Backend):
+   Create an API endpoint:
+   POST /analyze
+
+It should:
+
+* Accept content input
+* Send prompt to OpenAI API like:
+
+"Analyze the following content for SEO, AEO, and GEO optimization.
+Return:
+
+* SEO score (0–100)
+* AEO score (0–100)
+* GEO score (0–100)
+* List of issues
+* Suggestions with explanation
+
+Content:
+[USER INPUT]"
+
+* Return structured JSON
+
+3. Display Results (Frontend):
+   Show:
+
+* SEO Score (card UI)
+* AEO Score
+* GEO Score
+* Issues list (bullet points)
+* Suggestions (with explanation)
+
+4. Fix Everything Feature:
+   Button: "Fix Everything"
+
+Create endpoint:
+POST /optimize
+
+Prompt:
+
+"Rewrite and optimize the following content for SEO, AEO, and GEO.
+Make it:
+
+* Clear
+* Structured
+* Answer-focused
+* Keyword optimized
+* LLM friendly
+
+Content:
+[USER INPUT]"
+
+Return optimized content
+
+Display output in editable textarea
+
+---
+
+🎨 UI DESIGN:
+
+* Clean SaaS UI (like modern AI tools)
+* Use Tailwind CSS
+* Centered layout
+* Cards for scores
+* Buttons with primary color (purple/blue)
+* Responsive design
+
+Pages:
+
+* Main app page only (no routing needed for MVP)
+
+---
+
+🔐 OPTIONAL (if easy):
+
+* Simple login system (email + password)
+* Store user inputs
+
+---
+
+⚙️ FILE STRUCTURE:
+
+* /client → React frontend
+* /server → Express backend
+
+---
+
+🚀 EXTRA FEATURES (if possible):
+
+* Loading spinner during AI response
+* Error handling
+* Copy button for optimized content
+
+---
+
+🔑 ENV VARIABLES:
+
+Use:
+OPENAI_API_KEY=your_api_key_here
+
+---
+
+🎯 GOAL:
+
+Create a working MVP where:
+User inputs content → clicks analyze → sees scores + suggestions → clicks fix → gets optimized content.
+
+---
+
+IMPORTANT:
+
+* Keep code simple and readable
+* Focus on functionality over complexity
+* No need for advanced SEO crawling or scraping
+* Use mock scoring logic if needed
+
+---
+
+End result:
+A working AI SaaS app that demonstrates content optimization flow.

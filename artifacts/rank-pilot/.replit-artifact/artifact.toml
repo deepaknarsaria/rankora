@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "RankPilot AI"
+version = "1.0.0"
+id = "artifacts/rank-pilot"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24309
+
+[services.development]
+run = "pnpm --filter @workspace/rank-pilot run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/rank-pilot", "run", "build" ]
+publicDir = "artifacts/rank-pilot/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24309"
+BASE_PATH = "/"

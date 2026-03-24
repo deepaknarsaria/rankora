@@ -1,15 +1,16 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: RankPilot AI API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: content
+    description: Content analysis and optimization
 paths:
   /healthz:
     get:
@@ -24,6 +25,68 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /analyze:
+    post:
+      operationId: analyzeContent
+      tags: [content]
+      summary: Analyze content for SEO, AEO, and GEO
+      description: Analyzes content and returns scores and suggestions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeRequest"
+      responses:
+        "200":
+          description: Analysis results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /optimize:
+    post:
+      operationId: optimizeContent
+      tags: [content]
+      summary: Optimize content for SEO, AEO, and GEO
+      description: Rewrites and optimizes content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptimizeRequest"
+      responses:
+        "200":
+          description: Optimized content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizeResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +96,79 @@ components:
           type: string
       required:
         - status
-
+    AnalyzeRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: The content to analyze
+      required:
+        - content
+    AnalyzeResponse:
+      type: object
+      properties:
+        seoScore:
+          type: number
+          description: SEO score from 0 to 100
+        aeoScore:
+          type: number
+          description: AEO score from 0 to 100
+        geoScore:
+          type: number
+          description: GEO score from 0 to 100
+        issues:
+          type: array
+          items:
+            type: string
+          description: List of identified issues
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Suggestion"
+          description: List of suggestions with explanations
+      required:
+        - seoScore
+        - aeoScore
+        - geoScore
+        - issues
+        - suggestions
+    Suggestion:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Short title of the suggestion
+        explanation:
+          type: string
+          description: Detailed explanation of the suggestion
+        category:
+          type: string
+          enum: [SEO, AEO, GEO]
+          description: Category this suggestion belongs to
+      required:
+        - title
+        - explanation
+        - category
+    OptimizeRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: The content to optimize
+      required:
+        - content
+    OptimizeResponse:
+      type: object
+      properties:
+        optimizedContent:
+          type: string
+          description: The optimized version of the content
+      required:
+        - optimizedContent
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

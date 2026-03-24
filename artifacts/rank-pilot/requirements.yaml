@@ -1,0 +1,15 @@
+packages:
+  "framer-motion": "For fluid layout animations and progress rings"
+  "clsx": "Utility for constructing className strings"
+  "tailwind-merge": "Utility for merging tailwind classes"
+
+images:
+  - path: "artifacts/rank-pilot/public/images/logo.png"
+    description: "Minimalist modern tech logo of an upward trending arrow made of glowing neon purple and blue geometric shapes, transparent background"
+    aspect_ratio: "1:1"
+  - path: "artifacts/rank-pilot/public/images/hero-bg.png"
+    description: "Abstract dark modern UI background with subtle deep purple and dark blue glowing light leaks and mesh gradients, very clean and professional, 8k resolution"
+    aspect_ratio: "16:9"
+
+notes:
+  - "Using provided standard Shadcn UI toaster setup, integrating custom premium variants for core UI elements inline."
