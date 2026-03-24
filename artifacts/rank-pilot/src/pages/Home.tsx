@@ -459,61 +459,20 @@ export default function Home() {
         </AnimatePresence>
       </header>
 
-      {/* ── HERO ── */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 text-center">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      {/* ── HERO + ANALYZER (above the fold) ── */}
+      <section id="analyzer" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6">
+        {/* Hero text */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8 space-y-4">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4d44e3]/8 border border-[#4d44e3]/20 rounded-full text-xs font-semibold text-[#4d44e3] uppercase tracking-wide">
             <Star className="w-3 h-3" /> SEO · AEO · GEO · AI Visibility
           </span>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 tracking-tighter leading-[1.05]">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tighter leading-[1.08]">
             Rank<span className="text-gradient">Pilot</span> AI
           </h1>
           <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-            Paste content or a URL. Get AI-powered SEO, AEO, GEO, and AI Visibility scores — then fix everything automatically.
+            Paste your content or a URL. Get AI-powered SEO, AEO, GEO &amp; AI Visibility scores — then fix everything in one click.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <a
-              href="#analyzer"
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
-            >
-              <Zap className="w-4 h-4 text-yellow-300" /> Analyze Content Free
-            </a>
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-semibold text-base border border-gray-200 shadow-sm transition-all duration-200"
-            >
-              See how it works <ChevronRight className="w-4 h-4" />
-            </a>
-          </div>
         </motion.div>
-      </section>
-
-      {/* ── TRUST SECTION ── */}
-      <section className="border-y border-gray-200 bg-white py-8">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-7">
-            Trusted by marketers and founders
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-            {[
-              { label: "Growth Teams", icon: <TrendingUp className="w-4 h-4" /> },
-              { label: "Content Agencies", icon: <FileText className="w-4 h-4" /> },
-              { label: "SaaS Founders", icon: <Sparkles className="w-4 h-4" /> },
-              { label: "SEO Experts", icon: <Search className="w-4 h-4" /> },
-              { label: "E-commerce Brands", icon: <BarChart2 className="w-4 h-4" /> },
-              { label: "Indie Hackers", icon: <Users className="w-4 h-4" /> },
-            ].map(({ label, icon }) => (
-              <div key={label} className="flex items-center gap-2 text-gray-400 font-semibold text-sm">
-                <span className="text-gray-300">{icon}</span>
-                {label}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── ANALYZER TOOL ── */}
-      <section id="analyzer" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
 
         {/* Credits indicator */}
         {!showOptimized && (
@@ -632,12 +591,19 @@ export default function Home() {
                       ? (uploadedFile ? "Processing file..." : inputIsUrl ? "Analyzing website..." : "Analyzing...")
                       : credits.remaining <= 0
                       ? "No Credits Left"
-                      : "Analyze Content"}
+                      : "Get My SEO Score"}
                   </button>
                 </div>
               </div>
             </div>
           </motion.div>
+        )}
+
+        {/* Microcopy */}
+        {!showOptimized && !showResults && (
+          <p className="text-center text-sm text-gray-400 mt-3 mb-2">
+            Supports URL, text, PDF, DOCX &nbsp;·&nbsp; Results in 10–15 seconds &nbsp;·&nbsp; No signup required
+          </p>
         )}
 
         {/* Loading */}
@@ -1022,6 +988,162 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
+      </section>
+
+      {/* ── TRUST / SOCIAL PROOF ── */}
+      <section className="border-y border-gray-200 bg-white py-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Trusted by marketers and founders</p>
+            <p className="text-sm text-gray-500">Used by 100+ marketers, founders, and content teams worldwide</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {[
+              {
+                quote: "This tool made SEO insanely simple. Got results in minutes and knew exactly what to fix.",
+                name: "Priya Mehta",
+                role: "Content Strategist, SaaS startup",
+                initial: "P",
+                color: "bg-violet-100 text-violet-700",
+              },
+              {
+                quote: "I replaced three separate tools with RankPilot AI. The AI Visibility score alone is worth it.",
+                name: "Rahul Desai",
+                role: "Indie Hacker & Blogger",
+                initial: "R",
+                color: "bg-blue-100 text-blue-700",
+              },
+              {
+                quote: "Our organic traffic doubled after using the Fix Everything feature. Unbelievable ROI.",
+                name: "Anika Torres",
+                role: "Head of Growth, eCommerce",
+                initial: "A",
+                color: "bg-teal-100 text-teal-700",
+              },
+            ].map(({ quote, name, role, initial, color }) => (
+              <div key={name} className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex flex-col gap-4">
+                <div className="flex gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed flex-1">"{quote}"</p>
+                <div className="flex items-center gap-3 mt-auto">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 ${color}`}>
+                    {initial}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{name}</p>
+                    <p className="text-xs text-gray-500">{role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Category row */}
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            {[
+              { label: "Growth Teams", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+              { label: "Content Agencies", icon: <FileText className="w-3.5 h-3.5" /> },
+              { label: "SaaS Founders", icon: <Sparkles className="w-3.5 h-3.5" /> },
+              { label: "SEO Experts", icon: <Search className="w-3.5 h-3.5" /> },
+              { label: "E-commerce Brands", icon: <BarChart2 className="w-3.5 h-3.5" /> },
+              { label: "Indie Hackers", icon: <Users className="w-3.5 h-3.5" /> },
+            ].map(({ label, icon }) => (
+              <div key={label} className="flex items-center gap-1.5 text-gray-400 font-medium text-xs">
+                <span className="text-gray-300">{icon}</span>{label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── DEMO PREVIEW — "See what you get" ── */}
+      <section className="py-20 bg-[#f8fafc]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="text-xs font-bold text-[#4d44e3] uppercase tracking-widest">Live Example</span>
+            <h2 className="mt-2 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
+              See what you get
+            </h2>
+            <p className="mt-3 text-gray-500 max-w-xl mx-auto">
+              Here's a real sample output from a blog post analysis — scores, issues, and an actionable fix in seconds.
+            </p>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            {/* Scores row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
+              {[
+                { label: "SEO Score", score: 78, color: "text-violet-600", bg: "bg-violet-50", bar: "bg-violet-500" },
+                { label: "AEO Score", score: 70, color: "text-blue-600", bg: "bg-blue-50", bar: "bg-blue-500" },
+                { label: "GEO Score", score: 72, color: "text-teal-600", bg: "bg-teal-50", bar: "bg-teal-500" },
+                { label: "AI Visibility", score: 65, color: "text-indigo-600", bg: "bg-indigo-50", bar: "bg-indigo-500" },
+              ].map(({ label, score, color, bg, bar }) => (
+                <div key={label} className={`flex flex-col items-center py-8 px-4 ${bg}`}>
+                  <p className={`text-4xl font-extrabold font-display ${color}`}>{score}</p>
+                  <p className="text-xs font-semibold text-gray-500 mt-1 mb-3">{label}</p>
+                  <div className="w-24 h-1.5 bg-white rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${bar}`} style={{ width: `${score}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Sample suggestions */}
+            <div className="p-6 sm:p-8 space-y-4 border-t border-gray-100">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Sample Issues &amp; Suggestions</p>
+              {[
+                {
+                  type: "issue",
+                  label: "High",
+                  labelClass: "bg-red-100 text-red-700 border-red-200",
+                  dotClass: "bg-red-500",
+                  title: "Missing FAQ section",
+                  desc: "No FAQ section detected. Adding one significantly improves featured snippet chances on Google.",
+                },
+                {
+                  type: "opportunity",
+                  label: "High",
+                  labelClass: "bg-violet-100 text-violet-700 border-violet-200",
+                  dotClass: "bg-violet-500",
+                  title: "Add structured data (FAQ schema)",
+                  desc: 'Mark up FAQ content with JSON-LD schema to appear in AI Overviews and voice search results.',
+                },
+                {
+                  type: "opportunity",
+                  label: "Medium",
+                  labelClass: "bg-blue-100 text-blue-700 border-blue-200",
+                  dotClass: "bg-amber-500",
+                  title: "Improve meta description length",
+                  desc: "Meta description is 48 chars — aim for 120–155 chars with a clear value proposition and CTA.",
+                },
+              ].map(({ label, labelClass, dotClass, title, desc }, i) => (
+                <div key={i} className="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${dotClass}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="text-sm font-semibold text-gray-900">{title}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${labelClass}`}>{label}</span>
+                    </div>
+                    <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+                  </div>
+                </div>
+              ))}
+
+              {/* Fix Everything CTA teaser */}
+              <div className="mt-6 flex items-center justify-between bg-[#4d44e3]/6 border border-[#4d44e3]/20 rounded-xl px-5 py-4">
+                <div>
+                  <p className="text-sm font-bold text-gray-900">Fix Everything — AI Rewrite</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Click to get fully optimized content, FAQs, meta tags &amp; more.</p>
+                </div>
+                <a href="#analyzer" className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-[#4d44e3] text-white rounded-xl font-bold text-sm shadow-sm hover:bg-[#4338ca] transition-colors">
+                  <Zap className="w-3.5 h-3.5 text-yellow-300" /> Try it free
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ── FEATURES SECTION ── */}

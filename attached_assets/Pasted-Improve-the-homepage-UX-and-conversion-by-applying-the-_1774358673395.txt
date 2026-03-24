@@ -1,0 +1,122 @@
+Improve the homepage UX and conversion by applying the following updates.
+
+IMPORTANT:
+
+* Do NOT change backend logic
+* Do NOT break existing UI
+* Only improve layout, copy, and UX
+
+---
+
+🧩 1. MOVE ANALYZER ABOVE THE FOLD
+
+* Move the content input box (analyzer section) directly below the hero headline and subheadline
+* Ensure it is visible without scrolling
+
+New flow:
+Headline → Subheadline → Analyzer input → CTA
+
+Goal:
+Users should immediately interact without scrolling
+
+---
+
+🧩 2. IMPROVE CTA COPY
+
+Update primary CTA buttons:
+
+* Change:
+  "Analyze Content Free"
+
+* To:
+  "Analyze & Fix My Content"
+
+OR
+"Get My SEO Score"
+
+(Choose the best performing variant)
+
+---
+
+🧩 3. ADD MICROCOPY (UNDER INPUT BOX)
+
+Add small helper text below the input area:
+
+"Supports URL, text, PDF, DOCX • Results in 10–15 seconds"
+
+Style:
+
+* text-sm
+* text-gray-500
+* centered or subtle
+
+Goal:
+Reduce friction and improve clarity
+
+---
+
+🧩 4. ADD SOCIAL PROOF SECTION (ENHANCE TRUST)
+
+Update or replace current trust section:
+
+Add headline:
+"Trusted by marketers and founders"
+
+Add:
+
+* "Used by 100+ marketers & founders"
+  OR
+* 2–3 simple testimonial cards (name, role, short quote)
+
+Example testimonial:
+"This tool made SEO insanely simple. Got results in minutes."
+
+Keep clean, minimal design
+
+---
+
+🧩 5. ADD DEMO / EXAMPLE PREVIEW (HIGH IMPACT)
+
+Add a new section before Features:
+
+Title:
+"See what you get"
+
+Show a sample result UI:
+
+* SEO Score: 78
+* AEO Score: 70
+* GEO Score: 72
+* Example suggestion:
+  "Add FAQ section to improve featured snippet chances"
+
+Use a styled card preview (mock data is fine)
+
+Goal:
+Show product output before user tries it
+
+---
+
+🧩 6. OPTIONAL: STICKY CTA IMPROVEMENT
+
+* Make "Try Free" button in navbar scroll to analyzer section
+* Smooth scroll behavior
+
+---
+
+🎯 FINAL GOAL:
+
+* Reduce friction
+* Increase user interaction
+* Improve conversion rate
+* Make product feel instant and valuable
+
+---
+
+RESULT:
+
+A high-converting SaaS homepage where users:
+
+* Understand value instantly
+* Try the product immediately
+* Trust the product faster
