@@ -404,10 +404,10 @@ export default function Home() {
             <Star className="w-3 h-3" /> SEO · AEO · GEO · AI Visibility
           </span>
           <h1 className="text-4xl md:text-5xl lg:text-5xl font-extrabold text-gray-900 tracking-tighter leading-[1.1]">
-            Your Competitors Are Already Using <span className="text-gradient">AI SEO</span> —<br className="hidden sm:block" /> Don't Fall Behind.
+            Your Competitors Are Already Using <span className="text-gradient">AI SEO</span><br className="hidden sm:block" /> Don't Fall Behind.
           </h1>
           <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-            Rankora <span className="font-semibold text-gray-700">AI</span> analyzes and optimizes your content for SEO, AEO, GEO, and AI visibility — so you rank faster and stay ahead.
+            Rankora <span className="font-semibold text-gray-700">AI</span> analyzes and optimizes your content for SEO, AEO, GEO, and AI visibility so you rank faster and stay ahead.
           </p>
         </motion.div>
 
