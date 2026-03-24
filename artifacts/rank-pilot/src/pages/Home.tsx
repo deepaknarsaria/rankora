@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -29,6 +29,8 @@ import {
   BarChart2,
   Menu,
   X,
+  Upload,
+  Paperclip,
 } from "lucide-react";
 import { useAnalyzeContent, useOptimizeContent } from "@workspace/api-client-react";
 import type { ContentSection, FaqItem, Issue, Opportunity } from "@workspace/api-client-react";
@@ -61,11 +63,22 @@ const OPTIMIZE_STEPS = [
   "Adding internal linking suggestions...",
   "Finalizing your content...",
 ];
+const FILE_STEPS = [
+  "Reading your file...",
+  "Extracting text content...",
+  "Checking SEO structure...",
+  "Evaluating answer-engine readiness...",
+  "Scoring AI visibility...",
+  "Building your report...",
+];
 
-/* ── Animated Loading Panel (unchanged) ── */
-function LoadingPanel({ mode, isUrl }: { mode: "analyze" | "optimize"; isUrl: boolean }) {
+/* ── Animated Loading Panel ── */
+function LoadingPanel({ mode, isUrl }: { mode: "analyze" | "optimize" | "file"; isUrl: boolean }) {
   const [stepIdx, setStepIdx] = useState(0);
-  const steps = mode === "optimize" ? OPTIMIZE_STEPS : isUrl ? ANALYZE_URL_STEPS : ANALYZE_STEPS;
+  const steps =
+    mode === "optimize" ? OPTIMIZE_STEPS :
+    mode === "file"     ? FILE_STEPS :
+    isUrl               ? ANALYZE_URL_STEPS : ANALYZE_STEPS;
 
   useEffect(() => {
     setStepIdx(0);
@@ -75,7 +88,8 @@ function LoadingPanel({ mode, isUrl }: { mode: "analyze" | "optimize"; isUrl: bo
 
   const label =
     mode === "optimize" ? "Optimizing your content..." :
-    isUrl ? "Analyzing website..." : "Analyzing content...";
+    mode === "file"     ? "Processing your file..." :
+    isUrl               ? "Analyzing website..." : "Analyzing content...";
 
   return (
     <motion.div
@@ -176,6 +190,17 @@ export default function Home() {
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  /* ── File upload state ── */
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isFileAnalyzing, setIsFileAnalyzing] = useState(false);
+  const [fileAnalysisError, setFileAnalysisError] = useState<string | null>(null);
+  const [fileAnalysisData, setFileAnalysisData] = useState<{
+    seoScore: number; aeoScore: number; geoScore: number; aiVisibilityScore: number;
+    issues: Issue[]; opportunities: Opportunity[];
+  } | null>(null);
+
   const { toast } = useToast();
   const inputIsUrl = isUrl(content);
 
@@ -250,6 +275,9 @@ export default function Home() {
   const handleStartOver = () => {
     setContent("");
     setHasAnalyzed(false);
+    setUploadedFile(null);
+    setFileAnalysisData(null);
+    setFileAnalysisError(null);
     analyzeMutation.reset();
     optimizeMutation.reset();
   };
@@ -259,11 +287,71 @@ export default function Home() {
     if (hasAnalyzed) {
       setHasAnalyzed(false);
       analyzeMutation.reset();
+      setFileAnalysisData(null);
+    }
+    if (uploadedFile) {
+      setUploadedFile(null);
     }
   };
 
+  /* ── File upload handlers ── */
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadedFile(file);
+    setContent("");
+    setHasAnalyzed(false);
+    setFileAnalysisData(null);
+    setFileAnalysisError(null);
+    analyzeMutation.reset();
+    optimizeMutation.reset();
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setFileAnalysisData(null);
+    setFileAnalysisError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleAnalyzeFile = async (file: File) => {
+    setIsFileAnalyzing(true);
+    setFileAnalysisError(null);
+    setFileAnalysisData(null);
+    setAnalyzeError(null);
+    optimizeMutation.reset();
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const resp = await fetch("/api/analyze-file", { method: "POST", body: formData });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error ?? "Failed to analyze file.");
+      setFileAnalysisData(data);
+      if (data.extractedContent) setContent(data.extractedContent);
+      setHasAnalyzed(true);
+      toast({ title: "Analysis complete!", description: "Your file has been fully scored." });
+    } catch (err: any) {
+      setFileAnalysisError(err.message ?? "An error occurred while analyzing the file.");
+    } finally {
+      setIsFileAnalyzing(false);
+    }
+  };
+
+  /* Unified analyze entry point */
+  const handleAnalyzeClick = () => {
+    if (uploadedFile) {
+      handleAnalyzeFile(uploadedFile);
+    } else {
+      handleAnalyze();
+    }
+  };
+
+  const analysisData = fileAnalysisData ?? analyzeMutation.data ?? null;
+
   const showOptimized = !!optimizeMutation.data;
-  const showResults = hasAnalyzed && analyzeMutation.data && !showOptimized;
+  const showResults = hasAnalyzed && analysisData && !showOptimized;
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">

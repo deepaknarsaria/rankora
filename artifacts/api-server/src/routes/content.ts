@@ -1,6 +1,9 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import axios from "axios";
 import * as cheerio from "cheerio";
+import multer from "multer";
+import pdfParse from "pdf-parse";
+import mammoth from "mammoth";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   AnalyzeContentBody,
@@ -9,6 +12,27 @@ import {
 
 const router: IRouter = Router();
 
+/* ── Multer — memory storage, 10 MB limit ── */
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    const allowed = [
+      "text/plain",
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/msword",
+    ];
+    const extOk = /\.(txt|pdf|docx|doc)$/i.test(file.originalname);
+    if (allowed.includes(file.mimetype) || extOk) {
+      cb(null, true);
+    } else {
+      cb(new Error("Unsupported file type. Please upload .txt, .pdf, or .docx"));
+    }
+  },
+});
+
+/* ── URL helpers ── */
 async function extractContentFromUrl(url: string): Promise<string> {
   let response;
   try {
@@ -33,15 +57,11 @@ async function extractContentFromUrl(url: string): Promise<string> {
   }
 
   const $ = cheerio.load(response.data as string);
-
   $("script, style, noscript, nav, footer, header, aside, iframe, svg").remove();
 
   const title = $("title").text().trim();
   const metaDesc = $('meta[name="description"]').attr("content") ?? "";
-  const h1s = $("h1")
-    .map((_, el) => $(el).text().trim())
-    .get()
-    .join(" | ");
+  const h1s = $("h1").map((_, el) => $(el).text().trim()).get().join(" | ");
   const bodyText = $("body").text().replace(/\s+/g, " ").trim();
 
   const combined = [
@@ -49,14 +69,11 @@ async function extractContentFromUrl(url: string): Promise<string> {
     metaDesc ? `Meta Description: ${metaDesc}` : "",
     h1s ? `H1 Headings: ${h1s}` : "",
     bodyText,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+  ].filter(Boolean).join("\n\n");
 
   if (combined.length < 50) {
     throw new Error("Could not extract meaningful content from this URL");
   }
-
   return combined.slice(0, 12000);
 }
 
@@ -64,37 +81,51 @@ function isUrl(input: string): boolean {
   return /^https?:\/\//i.test(input.trim());
 }
 
-router.post("/analyze", async (req, res) => {
-  const parseResult = AnalyzeContentBody.safeParse(req.body);
-  if (!parseResult.success) {
-    res.status(400).json({ error: "Invalid request body" });
-    return;
+/* ── File text extraction ── */
+async function extractTextFromFile(file: Express.Multer.File): Promise<string> {
+  const ext = file.originalname.split(".").pop()?.toLowerCase() ?? "";
+
+  if (ext === "txt") {
+    const text = file.buffer.toString("utf-8").trim();
+    if (!text) throw new Error("The uploaded .txt file is empty.");
+    return text.slice(0, 12000);
   }
 
-  const { content: rawInput } = parseResult.data;
-
-  if (!rawInput || rawInput.trim().length < 3) {
-    res.status(400).json({ error: "Please provide content or a URL to analyze." });
-    return;
+  if (ext === "pdf") {
+    let parsed;
+    try {
+      parsed = await pdfParse(file.buffer);
+    } catch {
+      throw new Error("Could not parse the PDF. Make sure it is not password-protected.");
+    }
+    const text = parsed.text.trim();
+    if (!text) throw new Error("No readable text found in the PDF.");
+    return text.slice(0, 12000);
   }
 
-  let content: string;
-  const inputIsUrl = isUrl(rawInput);
-
-  try {
-    content = inputIsUrl ? await extractContentFromUrl(rawInput.trim()) : rawInput;
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-    return;
+  if (ext === "docx" || ext === "doc") {
+    let result;
+    try {
+      result = await mammoth.extractRawText({ buffer: file.buffer });
+    } catch {
+      throw new Error("Could not read the Word document. Make sure it is a valid .docx file.");
+    }
+    const text = result.value.trim();
+    if (!text) throw new Error("No readable text found in the Word document.");
+    return text.slice(0, 12000);
   }
 
-  if (content.trim().length < 10) {
-    res.status(400).json({ error: "Content is too short to analyze meaningfully." });
-    return;
-  }
+  throw new Error("Unsupported file type. Please upload .txt, .pdf, or .docx");
+}
 
-  try {
-    const prompt = `Analyze the following content for SEO, AEO, and GEO optimization.
+/* ── Shared AI analysis ── */
+function normalizeP(p: string) {
+  const v = String(p ?? "").trim();
+  return (v === "High" || v === "Medium" || v === "Low") ? v : "Medium";
+}
+
+async function runAnalysis(content: string) {
+  const prompt = `Analyze the following content for SEO, AEO, and GEO optimization.
 
 Return ONLY JSON in this format:
 
@@ -103,7 +134,6 @@ Return ONLY JSON in this format:
   "aeoScore": number (0-100),
   "geoScore": number (0-100),
   "aiVisibilityScore": number (0-100),
-
   "issues": [
     {
       "title": "Short issue title",
@@ -112,7 +142,6 @@ Return ONLY JSON in this format:
       "priority": "High | Medium | Low"
     }
   ],
-
   "opportunities": [
     {
       "title": "Fix suggestion title",
@@ -133,63 +162,138 @@ Rules:
 Content:
 ${content}`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-5.2",
-      max_completion_tokens: 4096,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an expert content optimization analyst. Always respond with valid JSON only, no markdown, no code blocks.",
-        },
-        { role: "user", content: prompt },
-      ],
-    });
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.2",
+    max_completion_tokens: 4096,
+    messages: [
+      {
+        role: "system",
+        content: "You are an expert content optimization analyst. Always respond with valid JSON only, no markdown, no code blocks.",
+      },
+      { role: "user", content: prompt },
+    ],
+  });
 
-    const rawContent = response.choices[0]?.message?.content ?? "{}";
-    const cleanedContent = rawContent
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
-      .trim();
-    const analysis = JSON.parse(cleanedContent);
+  const raw = (response.choices[0]?.message?.content ?? "{}").replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  const analysis = JSON.parse(raw);
 
-    const normalizePriority = (p: string) => {
-      const v = String(p ?? "").trim();
-      if (v === "High" || v === "Medium" || v === "Low") return v;
-      return "Medium";
-    };
+  return {
+    seoScore: Number(analysis.seoScore) || 0,
+    aeoScore: Number(analysis.aeoScore) || 0,
+    geoScore: Number(analysis.geoScore) || 0,
+    aiVisibilityScore: Number(analysis.aiVisibilityScore) || 0,
+    issues: Array.isArray(analysis.issues)
+      ? analysis.issues.map((issue: any) => ({
+          title: String(issue.title ?? ""),
+          description: String(issue.description ?? ""),
+          impact: String(issue.impact ?? ""),
+          priority: normalizeP(issue.priority),
+        }))
+      : [],
+    opportunities: Array.isArray(analysis.opportunities)
+      ? analysis.opportunities.map((opp: any) => ({
+          title: String(opp.title ?? ""),
+          description: String(opp.description ?? ""),
+          example: String(opp.example ?? ""),
+          impact: String(opp.impact ?? ""),
+          priority: normalizeP(opp.priority),
+        }))
+      : [],
+  };
+}
 
-    res.json({
-      seoScore: Number(analysis.seoScore) || 0,
-      aeoScore: Number(analysis.aeoScore) || 0,
-      geoScore: Number(analysis.geoScore) || 0,
-      aiVisibilityScore: Number(analysis.aiVisibilityScore) || 0,
-      issues: Array.isArray(analysis.issues)
-        ? analysis.issues.map((issue: any) => ({
-            title: String(issue.title ?? ""),
-            description: String(issue.description ?? ""),
-            impact: String(issue.impact ?? ""),
-            priority: normalizePriority(issue.priority),
-          }))
-        : [],
-      opportunities: Array.isArray(analysis.opportunities)
-        ? analysis.opportunities.map((opp: any) => ({
-            title: String(opp.title ?? ""),
-            description: String(opp.description ?? ""),
-            example: String(opp.example ?? ""),
-            impact: String(opp.impact ?? ""),
-            priority: normalizePriority(opp.priority),
-          }))
-        : [],
-    });
+/* ══════════════════════════════════════
+   POST /analyze  (text / URL)
+══════════════════════════════════════ */
+router.post("/analyze", async (req, res) => {
+  const parseResult = AnalyzeContentBody.safeParse(req.body);
+  if (!parseResult.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+
+  const { content: rawInput } = parseResult.data;
+
+  if (!rawInput || rawInput.trim().length < 3) {
+    res.status(400).json({ error: "Please provide content or a URL to analyze." });
+    return;
+  }
+
+  let content: string;
+  try {
+    content = isUrl(rawInput) ? await extractContentFromUrl(rawInput.trim()) : rawInput;
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+    return;
+  }
+
+  if (content.trim().length < 10) {
+    res.status(400).json({ error: "Content is too short to analyze meaningfully." });
+    return;
+  }
+
+  try {
+    res.json(await runAnalysis(content));
   } catch (err) {
     req.log.error({ err }, "Failed to analyze content");
-    res
-      .status(500)
-      .json({ error: "Failed to analyze content. Please try again." });
+    res.status(500).json({ error: "Failed to analyze content. Please try again." });
   }
 });
 
+/* ══════════════════════════════════════
+   POST /analyze-file  (multipart upload)
+══════════════════════════════════════ */
+const uploadMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  upload.single("file")(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        res.status(400).json({ error: "File is too large. Maximum size is 10 MB." });
+      } else {
+        res.status(400).json({ error: `Upload error: ${err.message}` });
+      }
+      return;
+    }
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    next();
+  });
+};
+
+router.post("/analyze-file", uploadMiddleware, async (req, res) => {
+  const file = (req as any).file as Express.Multer.File | undefined;
+
+  if (!file) {
+    res.status(400).json({ error: "No file uploaded." });
+    return;
+  }
+
+  let extractedContent: string;
+  try {
+    extractedContent = await extractTextFromFile(file);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+    return;
+  }
+
+  if (extractedContent.trim().length < 10) {
+    res.status(400).json({ error: "The file content is too short to analyze meaningfully." });
+    return;
+  }
+
+  try {
+    const analysis = await runAnalysis(extractedContent);
+    res.json({ ...analysis, extractedContent });
+  } catch (err) {
+    req.log.error({ err }, "Failed to analyze file");
+    res.status(500).json({ error: "Failed to analyze the file. Please try again." });
+  }
+});
+
+/* ══════════════════════════════════════
+   POST /optimize  (text / URL)
+══════════════════════════════════════ */
 router.post("/optimize", async (req, res) => {
   const parseResult = OptimizeContentBody.safeParse(req.body);
   if (!parseResult.success) {
@@ -205,10 +309,8 @@ router.post("/optimize", async (req, res) => {
   }
 
   let content: string;
-  const inputIsUrl = isUrl(rawInput);
-
   try {
-    content = inputIsUrl ? await extractContentFromUrl(rawInput.trim()) : rawInput;
+    content = isUrl(rawInput) ? await extractContentFromUrl(rawInput.trim()) : rawInput;
   } catch (err: any) {
     res.status(400).json({ error: err.message });
     return;
@@ -267,20 +369,14 @@ ${content}`;
       messages: [
         {
           role: "system",
-          content:
-            "You are an expert content writer and SEO specialist. Always respond with valid JSON only, no markdown, no code blocks.",
+          content: "You are an expert content writer and SEO specialist. Always respond with valid JSON only, no markdown, no code blocks.",
         },
         { role: "user", content: prompt },
       ],
     });
 
-    const rawOutput = response.choices[0]?.message?.content ?? "{}";
-    const cleanedOutput = rawOutput
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
-      .trim();
-
-    const optimized = JSON.parse(cleanedOutput);
+    const rawOutput = (response.choices[0]?.message?.content ?? "{}").replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const optimized = JSON.parse(rawOutput);
 
     res.json({
       title: String(optimized.title ?? ""),
@@ -308,9 +404,7 @@ ${content}`;
     });
   } catch (err) {
     req.log.error({ err }, "Failed to optimize content");
-    res
-      .status(500)
-      .json({ error: "Failed to optimize content. Please try again." });
+    res.status(500).json({ error: "Failed to optimize content. Please try again." });
   }
 });
 

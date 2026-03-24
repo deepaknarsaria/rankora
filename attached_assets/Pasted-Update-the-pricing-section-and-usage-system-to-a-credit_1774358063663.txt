@@ -1,0 +1,168 @@
+Update the pricing section and usage system to a credit-based SaaS model with INR / USD toggle.
+
+IMPORTANT:
+
+* Do NOT break existing functionality
+* Only enhance pricing UI and usage system
+
+---
+
+🧩 PRICING TIERS:
+
+1. FREE PLAN:
+
+* 5 credits per month
+* Basic analysis
+* Limited suggestions
+* No "Fix Everything"
+* No file upload
+
+Price:
+₹0 / $0
+
+---
+
+2. PRO PLAN (Highlight this plan):
+
+* 100 credits per month
+* Full SEO, AEO, GEO analysis
+* "Fix Everything" enabled
+* File upload enabled
+* Faster processing
+
+Price:
+₹999/month OR $12/month
+
+---
+
+3. PREMIUM PLAN:
+
+* 300 credits per month
+* Priority processing
+* Advanced insights
+* Export features
+* Future API access
+
+Price:
+₹2999/month OR $39/month
+
+---
+
+🧠 CREDIT SYSTEM:
+
+* 1 analysis = 1 credit
+* 1 optimization = 2 credits
+
+---
+
+🧩 FRONTEND CHANGES:
+
+1. Add INR / USD toggle above pricing cards:
+
+UI:
+
+* Pill style toggle:
+  [ ₹ INR ]   [ $ USD ]
+
+* Active option highlighted
+
+* Smooth transition
+
+State:
+const [currency, setCurrency] = useState("INR");
+
+---
+
+2. Dynamic pricing display:
+
+If currency = INR:
+
+* Free: ₹0
+* Pro: ₹999
+* Premium: ₹2999
+
+If currency = USD:
+
+* Free: $0
+* Pro: $12
+* Premium: $39
+
+Update symbol dynamically
+
+---
+
+3. Update pricing cards UI:
+
+* Show credits clearly
+* Highlight Pro plan visually
+* Add "Most Popular" badge on Pro
+
+---
+
+4. Add usage indicator (top right or near Analyze button):
+
+Example:
+"Credits left: 3 / 5"
+
+---
+
+5. When user runs out of credits:
+
+* Disable Analyze button
+
+* Show message:
+  "You’ve reached your limit. Upgrade to continue."
+
+* Add CTA button:
+  "Upgrade Plan"
+
+---
+
+6. Add small note below pricing:
+
+"Prices may vary based on your region"
+
+---
+
+🧩 BACKEND LOGIC:
+
+* Track user credits (per user)
+
+* Deduct credits on:
+
+  * analyze → 1 credit
+  * optimize → 2 credits
+
+* Block request when credits = 0
+
+* Return error message:
+  "Credit limit reached"
+
+---
+
+🧠 OPTIONAL (SMART UX):
+
+* Detect user location:
+  If India → default INR
+  Else → default USD
+
+---
+
+🎯 GOAL:
+
+Create a clean, global SaaS pricing system that:
+
+* Uses monthly credits
+* Supports INR + USD toggle
+* Encourages upgrades
+* Is simple and easy to understand
+
+---
+
+RESULT:
+
+A monetizable SaaS pricing system with:
+
+* Credit-based usage
+* Multi-currency support
+* Upgrade-driven UX
