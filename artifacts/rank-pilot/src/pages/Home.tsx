@@ -403,11 +403,11 @@ export default function Home() {
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4d44e3]/8 border border-[#4d44e3]/20 rounded-full text-xs font-semibold text-[#4d44e3] uppercase tracking-wide">
             <Star className="w-3 h-3" /> SEO · AEO · GEO · AI Visibility
           </span>
-          <h1 className="text-4xl md:text-5xl lg:text-5xl font-extrabold text-gray-900 tracking-tighter leading-[1.08]">
-            Optimize Content for Google &amp; <span className="text-gradient">AI</span> — in One Click
+          <h1 className="text-4xl md:text-5xl lg:text-5xl font-extrabold text-gray-900 tracking-tighter leading-[1.1]">
+            Your Competitors Are Already Using <span className="text-gradient">AI SEO</span> —<br className="hidden sm:block" /> Don't Fall Behind.
           </h1>
           <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-            Rankora AI helps you improve SEO, AEO, GEO, and AI visibility with actionable insights and instant optimization.
+            Rankora <span className="font-semibold text-gray-700">AI</span> analyzes and optimizes your content for SEO, AEO, GEO, and AI visibility — so you rank faster and stay ahead.
           </p>
         </motion.div>
 
@@ -549,8 +549,12 @@ export default function Home() {
         </motion.div>
 
         {/* Microcopy */}
-        <p className="text-center text-sm text-gray-400 mt-3 mb-2">
+        <p className="text-center text-sm text-gray-400 mt-3">
           Supports URL, text, PDF, DOCX &nbsp;·&nbsp; Get results in 10–15 seconds
+        </p>
+        <p className="text-center text-xs text-amber-600 font-medium mt-1.5 mb-2 flex items-center justify-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
+          Early users are gaining rankings faster — don't miss out.
         </p>
 
         {/* File loading */}
