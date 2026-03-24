@@ -220,20 +220,45 @@ router.post("/optimize", async (req, res) => {
   }
 
   try {
-    const prompt = `Rewrite and optimize the following content for SEO, AEO (Answer Engine Optimization), and GEO (Generative Engine Optimization).
+    const prompt = `Rewrite and optimize the following content for SEO, AEO, and GEO.
 
-Make the rewritten content:
-- Clear and well-structured with proper H1/H2/H3 headings
-- Answer-focused: include direct answers to common questions
-- Keyword optimized naturally (no keyword stuffing)
-- LLM-friendly: factual, entity-rich, authoritative
-- Featured snippet ready: include short direct answers
-- Include bullet points and an FAQ section where useful
-- Readable and engaging for humans
+Return ONLY valid JSON (no markdown, no code blocks) in this exact structure:
 
-Return ONLY the optimized content as plain text. No JSON, no markdown code blocks, just the improved content itself.
+{
+  "title": "SEO-friendly optimized title (compelling, keyword-rich, under 70 chars)",
+  "metaDescription": "Meta description under 160 characters. Clear, keyword-rich, action-oriented.",
+  "introduction": "2-3 sentence engaging introduction paragraph that hooks the reader and states what they will learn.",
+  "sections": [
+    {
+      "heading": "Section heading text",
+      "level": 2,
+      "content": "Paragraph explaining this section clearly and factually.",
+      "bullets": ["Key point one", "Key point two", "Key point three"]
+    }
+  ],
+  "faq": [
+    {
+      "question": "Common question about this topic?",
+      "answer": "Direct, clear answer optimized for featured snippets. 2-3 sentences."
+    }
+  ],
+  "internalLinks": [
+    "Link to [Related Topic A] — anchor: 'learn more about X'",
+    "Link to [Related Topic B] — anchor: 'see our guide on Y'"
+  ],
+  "conclusion": "Strong closing paragraph summarizing key takeaways and a clear call to action.",
+  "rawContent": "The complete formatted content as plain text with all sections combined, suitable for copy-paste."
+}
 
-Original content:
+Requirements:
+- Include 3-6 sections with H2/H3 headings (use level 2 or 3 in the JSON)
+- Include 3-5 FAQ items with direct, snippet-ready answers
+- Include 2-4 internal linking suggestions as descriptive placeholders
+- Bullet points: 3-5 per section where helpful, otherwise empty array []
+- Make all content clear, simple, and keyword-optimized
+- rawContent should be the full article as clean plain text
+
+Content to optimize:
 ${content}`;
 
     const response = await openai.chat.completions.create({
@@ -243,15 +268,44 @@ ${content}`;
         {
           role: "system",
           content:
-            "You are an expert content writer and SEO specialist. Return only the optimized content, nothing else.",
+            "You are an expert content writer and SEO specialist. Always respond with valid JSON only, no markdown, no code blocks.",
         },
         { role: "user", content: prompt },
       ],
     });
 
-    const optimizedContent = response.choices[0]?.message?.content ?? "";
+    const rawOutput = response.choices[0]?.message?.content ?? "{}";
+    const cleanedOutput = rawOutput
+      .replace(/```json\n?/g, "")
+      .replace(/```\n?/g, "")
+      .trim();
 
-    res.json({ optimizedContent });
+    const optimized = JSON.parse(cleanedOutput);
+
+    res.json({
+      title: String(optimized.title ?? ""),
+      metaDescription: String(optimized.metaDescription ?? ""),
+      introduction: String(optimized.introduction ?? ""),
+      sections: Array.isArray(optimized.sections)
+        ? optimized.sections.map((s: any) => ({
+            heading: String(s.heading ?? ""),
+            level: Number(s.level ?? 2),
+            content: String(s.content ?? ""),
+            bullets: Array.isArray(s.bullets) ? s.bullets.map(String) : [],
+          }))
+        : [],
+      faq: Array.isArray(optimized.faq)
+        ? optimized.faq.map((f: any) => ({
+            question: String(f.question ?? ""),
+            answer: String(f.answer ?? ""),
+          }))
+        : [],
+      internalLinks: Array.isArray(optimized.internalLinks)
+        ? optimized.internalLinks.map(String)
+        : [],
+      conclusion: String(optimized.conclusion ?? ""),
+      rawContent: String(optimized.rawContent ?? ""),
+    });
   } catch (err) {
     req.log.error({ err }, "Failed to optimize content");
     res

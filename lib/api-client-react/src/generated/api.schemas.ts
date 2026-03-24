@@ -73,9 +73,39 @@ export interface OptimizeRequest {
   content: string;
 }
 
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface ContentSection {
+  /** Section heading text */
+  heading: string;
+  /** Heading level (1, 2, or 3) */
+  level: number;
+  /** Paragraph content under this heading */
+  content: string;
+  /** Optional bullet points for this section */
+  bullets: string[];
+}
+
 export interface OptimizeResponse {
-  /** The optimized version of the content */
-  optimizedContent: string;
+  /** SEO-friendly optimized title */
+  title: string;
+  /** Meta description under 160 characters */
+  metaDescription: string;
+  /** Clear and engaging introduction paragraph */
+  introduction: string;
+  /** Structured content sections with headings */
+  sections: ContentSection[];
+  /** FAQ section with 3-5 questions and answers */
+  faq: FaqItem[];
+  /** Internal linking suggestions as placeholder text */
+  internalLinks: string[];
+  /** Closing conclusion paragraph */
+  conclusion: string;
+  /** Full formatted content as plain text for copy/paste */
+  rawContent: string;
 }
 
 export interface ErrorResponse {

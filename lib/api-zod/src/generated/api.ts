@@ -64,7 +64,30 @@ export const OptimizeContentBody = zod.object({
 });
 
 export const OptimizeContentResponse = zod.object({
-  optimizedContent: zod
-    .string()
-    .describe("The optimized version of the content"),
+  title: zod.string().describe("SEO-friendly optimized title"),
+  metaDescription: zod.string().describe("Meta description under 160 characters"),
+  introduction: zod.string().describe("Clear and engaging introduction paragraph"),
+  sections: zod
+    .array(
+      zod.object({
+        heading: zod.string().describe("Section heading text"),
+        level: zod.number().describe("Heading level (1, 2, or 3)"),
+        content: zod.string().describe("Paragraph content under this heading"),
+        bullets: zod.array(zod.string()).describe("Optional bullet points"),
+      }),
+    )
+    .describe("Structured content sections with headings"),
+  faq: zod
+    .array(
+      zod.object({
+        question: zod.string(),
+        answer: zod.string(),
+      }),
+    )
+    .describe("FAQ section with 3-5 questions and answers"),
+  internalLinks: zod
+    .array(zod.string())
+    .describe("Internal linking suggestions as placeholder text"),
+  conclusion: zod.string().describe("Closing conclusion paragraph"),
+  rawContent: zod.string().describe("Full formatted content as plain text for copy/paste"),
 });

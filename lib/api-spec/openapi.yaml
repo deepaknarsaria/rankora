@@ -188,14 +188,80 @@ components:
           description: The content or URL to optimize
       required:
         - content
+    FaqItem:
+      type: object
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+      required:
+        - question
+        - answer
+    ContentSection:
+      type: object
+      properties:
+        heading:
+          type: string
+          description: Section heading text
+        level:
+          type: number
+          description: Heading level (1, 2, or 3)
+        content:
+          type: string
+          description: Paragraph content under this heading
+        bullets:
+          type: array
+          items:
+            type: string
+          description: Optional bullet points for this section
+      required:
+        - heading
+        - level
+        - content
+        - bullets
     OptimizeResponse:
       type: object
       properties:
-        optimizedContent:
+        title:
           type: string
-          description: The optimized version of the content
+          description: SEO-friendly optimized title
+        metaDescription:
+          type: string
+          description: Meta description under 160 characters
+        introduction:
+          type: string
+          description: Clear and engaging introduction paragraph
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentSection"
+          description: Structured content sections with headings
+        faq:
+          type: array
+          items:
+            $ref: "#/components/schemas/FaqItem"
+          description: FAQ section with 3-5 questions and answers
+        internalLinks:
+          type: array
+          items:
+            type: string
+          description: Internal linking suggestions as placeholder text
+        conclusion:
+          type: string
+          description: Closing conclusion paragraph
+        rawContent:
+          type: string
+          description: Full formatted content as plain text for copy/paste
       required:
-        - optimizedContent
+        - title
+        - metaDescription
+        - introduction
+        - sections
+        - faq
+        - internalLinks
+        - conclusion
+        - rawContent
     ErrorResponse:
       type: object
       properties:
