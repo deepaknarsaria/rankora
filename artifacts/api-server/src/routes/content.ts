@@ -41,7 +41,7 @@ function deductIpCredits(ip: string, amount: number): void {
 /* ── User-based credit helpers (for authenticated users) ── */
 function getPlanTotal(plan: string): number {
   if (plan === "pro") return 50;
-  if (plan === "premium") return 200;
+  if (plan === "premium") return 150;
   return 5;
 }
 
@@ -434,9 +434,18 @@ router.post("/analyze-file", uploadMiddleware, async (req, res) => {
    POST /optimize  (text / URL)
 ══════════════════════════════════════ */
 router.post("/optimize", async (req, res) => {
-  const credit = await checkCredits(req, 2);
+  // Block optimization for authenticated free-plan users
+  if (req.user) {
+    const info = await getUserCreditInfo(req.user.id);
+    if (info.plan === "free") {
+      res.status(403).json({ error: "Optimization is a Pro feature. Upgrade to Pro or Premium to unlock AI rewrites.", creditsRemaining: info.credits, creditsTotal: getPlanTotal("free") });
+      return;
+    }
+  }
+
+  const credit = await checkCredits(req, 3);
   if (!credit.ok) {
-    res.status(429).json({ error: "You've reached your credit limit. Upgrade to continue.", creditsRemaining: credit.remaining, creditsTotal: credit.total });
+    res.status(429).json({ error: "Not enough credits. Optimization costs 3 credits. Upgrade to continue.", creditsRemaining: credit.remaining, creditsTotal: credit.total });
     return;
   }
 
@@ -533,7 +542,7 @@ ${content}`;
     const rawOutput = (response.choices[0]?.message?.content ?? "{}").replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     const optimized = JSON.parse(rawOutput);
 
-    const spent = await spendCredits(req, 2);
+    const spent = await spendCredits(req, 3);
     res.json({
       title: String(optimized.title ?? ""),
       metaDescription: String(optimized.metaDescription ?? ""),

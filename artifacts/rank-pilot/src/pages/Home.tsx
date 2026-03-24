@@ -887,7 +887,7 @@ export default function Home() {
             <div className="mt-4 inline-flex items-center gap-4 text-xs text-gray-500 bg-white border border-gray-200 rounded-full px-5 py-2">
               <span className="flex items-center gap-1.5"><Zap className="w-3 h-3 text-[#4d44e3]" /> 1 analysis = 1 credit</span>
               <span className="w-px h-3 bg-gray-200" />
-              <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-[#4d44e3]" /> 1 optimization = 2 credits</span>
+              <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-[#4d44e3]" /> 1 optimization = 3 credits</span>
             </div>
 
             {/* Currency toggle */}
@@ -973,11 +973,11 @@ export default function Home() {
               </div>
               <p className="text-sm text-white/60 mb-1">Everything you need to dominate search</p>
               <div className="flex items-center gap-1.5 mb-6 text-xs font-semibold text-yellow-300">
-                <Zap className="w-3 h-3" /> 100 credits / month
+                <Zap className="w-3 h-3" /> 50 credits / month
               </div>
               <ul className="space-y-3 mb-8 flex-1">
                 {[
-                  "100 monthly credits",
+                  "50 monthly credits",
                   "Full SEO, AEO, GEO analysis",
                   "Fix Everything (AI rewrite)",
                   "File upload (.txt, .pdf, .docx)",
@@ -1007,11 +1007,11 @@ export default function Home() {
               </div>
               <p className="text-sm text-gray-500 mb-1">For power users and agencies</p>
               <div className="flex items-center gap-1.5 mb-6 text-xs font-semibold text-[#4d44e3]">
-                <Zap className="w-3 h-3" /> 300 credits / month
+                <Zap className="w-3 h-3" /> 150 credits / month
               </div>
               <ul className="space-y-3 mb-8 flex-1">
                 {[
-                  "300 monthly credits",
+                  "150 monthly credits",
                   "Priority processing",
                   "Advanced insights",
                   "Export features",

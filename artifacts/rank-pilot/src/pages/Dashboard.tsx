@@ -829,11 +829,15 @@ export default function Dashboard() {
                           <h3 className="text-base font-bold text-gray-900">Optimization Engine</h3>
                           <p className="text-xs text-gray-500">AI rewrites your content for maximum SEO impact</p>
                         </div>
-                        {credits.remaining < 2 && (
-                          <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 font-semibold">
-                            Requires 2 credits
+                        {user?.plan === "free" ? (
+                          <span className="text-xs text-[#4d44e3] bg-[#4d44e3]/8 border border-[#4d44e3]/20 rounded-lg px-2 py-1 font-semibold">
+                            Pro feature
                           </span>
-                        )}
+                        ) : credits.remaining < 3 ? (
+                          <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 font-semibold">
+                            Requires 3 credits
+                          </span>
+                        ) : null}
                       </div>
                       <div className="p-6 space-y-5">
                         {/* Keyword context */}
@@ -860,14 +864,32 @@ export default function Dashboard() {
 
                         {/* CTA button (shown when no optimize data yet) */}
                         {!optimizeData && !isOptimizing && (
-                          <button
-                            onClick={() => handleOptimize()}
-                            disabled={isOptimizing || credits.remaining < 2}
-                            className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
-                          >
-                            <Zap className="w-5 h-5 text-yellow-300" />
-                            {kwStr ? `Optimize for "${kwStr.split(",")[0].trim()}${kwStr.includes(",") ? "..." : ""}"` : "Fix Everything Automatically"}
-                          </button>
+                          user?.plan === "free" ? (
+                            <div className="w-full flex flex-col items-center gap-3 px-8 py-6 bg-gradient-to-br from-[#4d44e3]/5 to-[#4d44e3]/10 border-2 border-dashed border-[#4d44e3]/30 rounded-xl text-center">
+                              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#4d44e3]/10">
+                                <Zap className="w-5 h-5 text-[#4d44e3]" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-gray-900 text-sm">Optimization requires Pro or Premium</p>
+                                <p className="text-xs text-gray-500 mt-1">Upgrade to unlock AI rewrites, "Fix Everything", and 3-credit optimizations.</p>
+                              </div>
+                              <a href="/#pricing" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-sm shadow-sm transition-colors">
+                                <Sparkles className="w-4 h-4 text-yellow-300" /> Upgrade to Pro
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <button
+                                onClick={() => handleOptimize()}
+                                disabled={isOptimizing || credits.remaining < 3}
+                                className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                              >
+                                <Zap className="w-5 h-5 text-yellow-300" />
+                                {kwStr ? `Optimize for "${kwStr.split(",")[0].trim()}${kwStr.includes(",") ? "..." : ""}"` : "Fix Everything Automatically"}
+                              </button>
+                              <p className="text-center text-xs text-gray-400">Uses 3 credits &nbsp;·&nbsp; You have {credits.remaining} remaining</p>
+                            </div>
+                          )
                         )}
 
                         {/* Before/After comparison banner */}
