@@ -7,6 +7,6 @@
  */
 
 export interface OptimizeRequest {
-  /** The content to optimize */
+  /** The content or URL to optimize */
   content: string;
 }

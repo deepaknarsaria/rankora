@@ -101,9 +101,53 @@ components:
       properties:
         content:
           type: string
-          description: The content to analyze
+          description: The content or URL to analyze
       required:
         - content
+    Issue:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Short issue title
+        description:
+          type: string
+          description: What is wrong
+        impact:
+          type: string
+          description: Why this matters for ranking or AI visibility
+        priority:
+          type: string
+          enum: [High, Medium, Low]
+      required:
+        - title
+        - description
+        - impact
+        - priority
+    Opportunity:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Fix suggestion title
+        description:
+          type: string
+          description: What to do
+        example:
+          type: string
+          description: Real example or sample implementation
+        impact:
+          type: string
+          description: Expected benefit
+        priority:
+          type: string
+          enum: [High, Medium, Low]
+      required:
+        - title
+        - description
+        - example
+        - impact
+        - priority
     AnalyzeResponse:
       type: object
       properties:
@@ -116,45 +160,32 @@ components:
         geoScore:
           type: number
           description: GEO score from 0 to 100
+        aiVisibilityScore:
+          type: number
+          description: Overall AI visibility score from 0 to 100
         issues:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/Issue"
           description: List of identified issues
-        suggestions:
+        opportunities:
           type: array
           items:
-            $ref: "#/components/schemas/Suggestion"
-          description: List of suggestions with explanations
+            $ref: "#/components/schemas/Opportunity"
+          description: List of actionable opportunities
       required:
         - seoScore
         - aeoScore
         - geoScore
+        - aiVisibilityScore
         - issues
-        - suggestions
-    Suggestion:
-      type: object
-      properties:
-        title:
-          type: string
-          description: Short title of the suggestion
-        explanation:
-          type: string
-          description: Detailed explanation of the suggestion
-        category:
-          type: string
-          enum: [SEO, AEO, GEO]
-          description: Category this suggestion belongs to
-      required:
-        - title
-        - explanation
-        - category
+        - opportunities
     OptimizeRequest:
       type: object
       properties:
         content:
           type: string
-          description: The content to optimize
+          description: The content or URL to optimize
       required:
         - content
     OptimizeResponse:

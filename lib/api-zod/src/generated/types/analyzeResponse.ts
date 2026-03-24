@@ -5,7 +5,8 @@
  * RankPilot AI API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { Suggestion } from "./suggestion";
+import type { Issue } from "./issue";
+import type { Opportunity } from "./opportunity";
 
 export interface AnalyzeResponse {
   /** SEO score from 0 to 100 */
@@ -14,8 +15,10 @@ export interface AnalyzeResponse {
   aeoScore: number;
   /** GEO score from 0 to 100 */
   geoScore: number;
+  /** Overall AI visibility score from 0 to 100 */
+  aiVisibilityScore: number;
   /** List of identified issues */
-  issues: string[];
-  /** List of suggestions with explanations */
-  suggestions: Suggestion[];
+  issues: Issue[];
+  /** List of actionable opportunities */
+  opportunities: Opportunity[];
 }

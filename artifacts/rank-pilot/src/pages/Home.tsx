@@ -8,7 +8,9 @@ import {
   Zap, 
   Copy, 
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  Bot,
+  ArrowRight
 } from "lucide-react";
 import { useAnalyzeContent, useOptimizeContent } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -186,88 +188,123 @@ export default function Home() {
               exit={{ opacity: 0, scale: 0.95 }} 
               className="space-y-12"
             >
-              {/* Scores Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <ScoreRing 
-                  score={analyzeMutation.data.seoScore} 
-                  label="SEO Score" 
-                  colorClass="stroke-violet-500" 
-                />
-                <ScoreRing 
-                  score={analyzeMutation.data.aeoScore} 
-                  label="AEO Score" 
-                  colorClass="stroke-blue-500" 
-                />
-                <ScoreRing 
-                  score={analyzeMutation.data.geoScore} 
-                  label="GEO Score" 
-                  colorClass="stroke-teal-500" 
-                />
+              {/* Scores Grid — 4 cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+                <ScoreRing score={analyzeMutation.data.seoScore} label="SEO Score" colorClass="stroke-violet-500" />
+                <ScoreRing score={analyzeMutation.data.aeoScore} label="AEO Score" colorClass="stroke-blue-500" />
+                <ScoreRing score={analyzeMutation.data.geoScore} label="GEO Score" colorClass="stroke-teal-500" />
+                <ScoreRing score={analyzeMutation.data.aiVisibilityScore} label="AI Visibility" colorClass="stroke-fuchsia-500" />
               </div>
 
-              {/* Issues & Suggestions Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Critical Issues */}
-                <div className="glass-panel p-8 rounded-[2rem] flex flex-col">
-                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-foreground">
-                    <AlertTriangle className="w-7 h-7 text-destructive" /> 
-                    Critical Issues
-                  </h3>
-                  {analyzeMutation.data.issues.length > 0 ? (
-                    <ul className="space-y-4 flex-1">
-                      {analyzeMutation.data.issues.map((issue, i) => (
-                        <motion.li 
-                          initial={{ opacity: 0, x: -20 }} 
-                          animate={{ opacity: 1, x: 0 }} 
-                          transition={{ delay: i * 0.1 }} 
-                          key={i} 
-                          className="flex items-start gap-4 bg-destructive/10 text-destructive-foreground p-5 rounded-2xl border border-destructive/20"
+              {/* Issues */}
+              <div className="glass-panel p-8 rounded-[2rem]">
+                <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-foreground">
+                  <AlertTriangle className="w-6 h-6 text-destructive" />
+                  Issues Found
+                  <span className="ml-auto text-sm font-normal text-muted-foreground">
+                    {(analyzeMutation.data.issues ?? []).length} issue{(analyzeMutation.data.issues ?? []).length !== 1 ? "s" : ""}
+                  </span>
+                </h3>
+                {(analyzeMutation.data.issues ?? []).length > 0 ? (
+                  <div className="space-y-4">
+                    {(analyzeMutation.data.issues ?? []).map((issue, i) => {
+                      const priorityStyles: Record<string, string> = {
+                        High: "bg-red-500/15 text-red-400 border-red-500/30",
+                        Medium: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+                        Low: "bg-slate-500/15 text-slate-400 border-slate-500/30",
+                      };
+                      const dotColors: Record<string, string> = {
+                        High: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]",
+                        Medium: "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]",
+                        Low: "bg-slate-500",
+                      };
+                      return (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -16 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.07 }}
+                          className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] transition-colors"
                         >
-                          <div className="mt-1.5 flex-shrink-0">
-                            <div className="w-2 h-2 rounded-full bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                          <div className="flex items-start gap-3 mb-2">
+                            <div className={`mt-2 w-2 h-2 rounded-full flex-shrink-0 ${dotColors[issue.priority] ?? dotColors.Medium}`} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <h4 className="font-semibold text-foreground text-base">{issue.title}</h4>
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${priorityStyles[issue.priority] ?? priorityStyles.Medium}`}>
+                                  {issue.priority}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground leading-relaxed">{issue.description}</p>
+                            </div>
                           </div>
-                          <p className="text-base leading-relaxed">{issue}</p>
-                        </motion.li>
-                      ))}
-                    </ul>
-                  ) : (
-                     <div className="flex items-center gap-4 text-emerald-400 bg-emerald-500/10 p-6 rounded-2xl border border-emerald-500/20 flex-1">
-                        <CheckCircle2 className="w-8 h-8" />
-                        <p className="text-lg font-medium">No critical issues found! Great job.</p>
-                     </div>
-                  )}
-                </div>
+                          <div className="ml-5 mt-3 flex items-start gap-2 text-sm text-muted-foreground/70 bg-white/[0.03] rounded-xl px-4 py-2.5 border border-white/5">
+                            <ArrowRight className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-primary/60" />
+                            <span><span className="text-primary/80 font-medium">Impact: </span>{issue.impact}</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4 text-emerald-400 bg-emerald-500/10 p-6 rounded-2xl border border-emerald-500/20">
+                    <CheckCircle2 className="w-8 h-8 flex-shrink-0" />
+                    <p className="text-lg font-medium">No issues found! Your content is in great shape.</p>
+                  </div>
+                )}
+              </div>
 
-                {/* Optimization Suggestions */}
-                <div className="glass-panel p-8 rounded-[2rem] flex flex-col">
-                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-foreground">
-                    <Lightbulb className="w-7 h-7 text-yellow-500" /> 
-                    Opportunities
-                  </h3>
-                  {analyzeMutation.data.suggestions.length > 0 ? (
-                    <ul className="space-y-5 flex-1">
-                      {analyzeMutation.data.suggestions.map((sug, i) => (
-                        <motion.li 
-                          initial={{ opacity: 0, x: 20 }} 
-                          animate={{ opacity: 1, x: 0 }} 
-                          transition={{ delay: i * 0.1 }} 
-                          key={i} 
-                          className="bg-white/5 p-5 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors"
+              {/* Opportunities */}
+              <div className="glass-panel p-8 rounded-[2rem]">
+                <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-foreground">
+                  <Lightbulb className="w-6 h-6 text-yellow-400" />
+                  Opportunities
+                  <span className="ml-auto text-sm font-normal text-muted-foreground">
+                    {(analyzeMutation.data.opportunities ?? []).length} suggestion{(analyzeMutation.data.opportunities ?? []).length !== 1 ? "s" : ""}
+                  </span>
+                </h3>
+                {(analyzeMutation.data.opportunities ?? []).length > 0 ? (
+                  <div className="space-y-5">
+                    {(analyzeMutation.data.opportunities ?? []).map((opp, i) => {
+                      const priorityStyles: Record<string, string> = {
+                        High: "bg-violet-500/15 text-violet-300 border-violet-500/30",
+                        Medium: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+                        Low: "bg-slate-500/15 text-slate-400 border-slate-500/30",
+                      };
+                      return (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: 16 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.07 }}
+                          className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] transition-colors"
                         >
-                          <div className="flex items-center gap-3 mb-3">
-                            <CategoryBadge category={sug.category} />
-                            <h4 className="font-bold text-foreground text-lg">{sug.title}</h4>
+                          <div className="flex items-center gap-2 flex-wrap mb-2">
+                            <h4 className="font-semibold text-foreground text-base">{opp.title}</h4>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${priorityStyles[opp.priority] ?? priorityStyles.Medium}`}>
+                              {opp.priority}
+                            </span>
                           </div>
-                          <p className="text-base text-muted-foreground leading-relaxed">{sug.explanation}</p>
-                        </motion.li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className="flex items-center gap-4 text-muted-foreground bg-white/5 p-6 rounded-2xl border border-white/10 flex-1">
-                      <p className="text-lg italic">No further suggestions. Your content looks fully optimized.</p>
-                    </div>
-                  )}
-                </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed mb-3">{opp.description}</p>
+                          {opp.example && (
+                            <div className="bg-primary/8 border border-primary/20 rounded-xl px-4 py-3 mb-3">
+                              <p className="text-xs text-primary/70 font-semibold uppercase tracking-wide mb-1">Example</p>
+                              <p className="text-sm text-foreground/80 leading-relaxed">{opp.example}</p>
+                            </div>
+                          )}
+                          <div className="flex items-start gap-2 text-sm text-muted-foreground/70">
+                            <Bot className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-teal-400/70" />
+                            <span><span className="text-teal-400/90 font-medium">Expected impact: </span>{opp.impact}</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4 text-muted-foreground bg-white/5 p-6 rounded-2xl border border-white/10">
+                    <p className="text-lg italic">No further opportunities. Your content looks fully optimized.</p>
+                  </div>
+                )}
               </div>
 
               {/* Fix Everything Action */}

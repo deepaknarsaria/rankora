@@ -20,27 +20,39 @@ export const HealthCheckResponse = zod.object({
  * @summary Analyze content for SEO, AEO, and GEO
  */
 export const AnalyzeContentBody = zod.object({
-  content: zod.string().describe("The content to analyze"),
+  content: zod.string().describe("The content or URL to analyze"),
 });
 
 export const AnalyzeContentResponse = zod.object({
   seoScore: zod.number().describe("SEO score from 0 to 100"),
   aeoScore: zod.number().describe("AEO score from 0 to 100"),
   geoScore: zod.number().describe("GEO score from 0 to 100"),
-  issues: zod.array(zod.string()).describe("List of identified issues"),
-  suggestions: zod
+  aiVisibilityScore: zod
+    .number()
+    .describe("Overall AI visibility score from 0 to 100"),
+  issues: zod
     .array(
       zod.object({
-        title: zod.string().describe("Short title of the suggestion"),
-        explanation: zod
+        title: zod.string().describe("Short issue title"),
+        description: zod.string().describe("What is wrong"),
+        impact: zod
           .string()
-          .describe("Detailed explanation of the suggestion"),
-        category: zod
-          .enum(["SEO", "AEO", "GEO"])
-          .describe("Category this suggestion belongs to"),
+          .describe("Why this matters for ranking or AI visibility"),
+        priority: zod.enum(["High", "Medium", "Low"]),
       }),
     )
-    .describe("List of suggestions with explanations"),
+    .describe("List of identified issues"),
+  opportunities: zod
+    .array(
+      zod.object({
+        title: zod.string().describe("Fix suggestion title"),
+        description: zod.string().describe("What to do"),
+        example: zod.string().describe("Real example or sample implementation"),
+        impact: zod.string().describe("Expected benefit"),
+        priority: zod.enum(["High", "Medium", "Low"]),
+      }),
+    )
+    .describe("List of actionable opportunities"),
 });
 
 /**
@@ -48,7 +60,7 @@ export const AnalyzeContentResponse = zod.object({
  * @summary Optimize content for SEO, AEO, and GEO
  */
 export const OptimizeContentBody = zod.object({
-  content: zod.string().describe("The content to optimize"),
+  content: zod.string().describe("The content or URL to optimize"),
 });
 
 export const OptimizeContentResponse = zod.object({

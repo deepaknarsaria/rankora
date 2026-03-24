@@ -7,6 +7,6 @@
  */
 
 export interface AnalyzeRequest {
-  /** The content to analyze */
+  /** The content or URL to analyze */
   content: string;
 }

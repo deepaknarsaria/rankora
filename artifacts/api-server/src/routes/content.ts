@@ -94,26 +94,41 @@ router.post("/analyze", async (req, res) => {
   }
 
   try {
-    const prompt = `You are an expert SEO, AEO (Answer Engine Optimization), and GEO (Generative Engine Optimization) analyst.
+    const prompt = `Analyze the following content for SEO, AEO, and GEO optimization.
 
-Analyze the following content and return a structured JSON response.
+Return ONLY JSON in this format:
 
-Analyze for:
-- SEO: keyword usage, headings, meta-friendly structure, readability, internal linking signals
-- AEO: direct answers, FAQ structure, featured snippet potential, question-based content
-- GEO: LLM-friendly structure, factual clarity, entity mentions, source-worthiness, structured data potential
-
-Return ONLY valid JSON in this exact format:
 {
-  "seoScore": <number 0-100>,
-  "aeoScore": <number 0-100>,
-  "geoScore": <number 0-100>,
-  "issues": [<string>, ...],
-  "suggestions": [
-    {"title": <string>, "explanation": <string>, "category": "SEO"|"AEO"|"GEO"},
-    ...
+  "seoScore": number (0-100),
+  "aeoScore": number (0-100),
+  "geoScore": number (0-100),
+  "aiVisibilityScore": number (0-100),
+
+  "issues": [
+    {
+      "title": "Short issue title",
+      "description": "What is wrong",
+      "impact": "Why this matters for ranking or AI visibility",
+      "priority": "High | Medium | Low"
+    }
+  ],
+
+  "opportunities": [
+    {
+      "title": "Fix suggestion title",
+      "description": "What to do",
+      "example": "Give real example or sample implementation",
+      "impact": "Expected benefit (ranking, CTR, AI visibility)",
+      "priority": "High | Medium | Low"
+    }
   ]
 }
+
+Rules:
+* Keep language simple and beginner-friendly
+* Make suggestions actionable
+* Include real examples wherever possible
+* Prioritize high-impact SEO and AI optimization
 
 Content:
 ${content}`;
@@ -138,13 +153,33 @@ ${content}`;
       .trim();
     const analysis = JSON.parse(cleanedContent);
 
+    const normalizePriority = (p: string) => {
+      const v = String(p ?? "").trim();
+      if (v === "High" || v === "Medium" || v === "Low") return v;
+      return "Medium";
+    };
+
     res.json({
       seoScore: Number(analysis.seoScore) || 0,
       aeoScore: Number(analysis.aeoScore) || 0,
       geoScore: Number(analysis.geoScore) || 0,
-      issues: Array.isArray(analysis.issues) ? analysis.issues : [],
-      suggestions: Array.isArray(analysis.suggestions)
-        ? analysis.suggestions
+      aiVisibilityScore: Number(analysis.aiVisibilityScore) || 0,
+      issues: Array.isArray(analysis.issues)
+        ? analysis.issues.map((issue: any) => ({
+            title: String(issue.title ?? ""),
+            description: String(issue.description ?? ""),
+            impact: String(issue.impact ?? ""),
+            priority: normalizePriority(issue.priority),
+          }))
+        : [],
+      opportunities: Array.isArray(analysis.opportunities)
+        ? analysis.opportunities.map((opp: any) => ({
+            title: String(opp.title ?? ""),
+            description: String(opp.description ?? ""),
+            example: String(opp.example ?? ""),
+            impact: String(opp.impact ?? ""),
+            priority: normalizePriority(opp.priority),
+          }))
         : [],
     });
   } catch (err) {

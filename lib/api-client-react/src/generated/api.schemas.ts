@@ -10,29 +10,47 @@ export interface HealthStatus {
 }
 
 export interface AnalyzeRequest {
-  /** The content to analyze */
+  /** The content or URL to analyze */
   content: string;
 }
 
-/**
- * Category this suggestion belongs to
- */
-export type SuggestionCategory =
-  (typeof SuggestionCategory)[keyof typeof SuggestionCategory];
+export type IssuePriority = (typeof IssuePriority)[keyof typeof IssuePriority];
 
-export const SuggestionCategory = {
-  SEO: "SEO",
-  AEO: "AEO",
-  GEO: "GEO",
+export const IssuePriority = {
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
 } as const;
 
-export interface Suggestion {
-  /** Short title of the suggestion */
+export interface Issue {
+  /** Short issue title */
   title: string;
-  /** Detailed explanation of the suggestion */
-  explanation: string;
-  /** Category this suggestion belongs to */
-  category: SuggestionCategory;
+  /** What is wrong */
+  description: string;
+  /** Why this matters for ranking or AI visibility */
+  impact: string;
+  priority: IssuePriority;
+}
+
+export type OpportunityPriority =
+  (typeof OpportunityPriority)[keyof typeof OpportunityPriority];
+
+export const OpportunityPriority = {
+  High: "High",
+  Medium: "Medium",
+  Low: "Low",
+} as const;
+
+export interface Opportunity {
+  /** Fix suggestion title */
+  title: string;
+  /** What to do */
+  description: string;
+  /** Real example or sample implementation */
+  example: string;
+  /** Expected benefit */
+  impact: string;
+  priority: OpportunityPriority;
 }
 
 export interface AnalyzeResponse {
@@ -42,14 +60,16 @@ export interface AnalyzeResponse {
   aeoScore: number;
   /** GEO score from 0 to 100 */
   geoScore: number;
+  /** Overall AI visibility score from 0 to 100 */
+  aiVisibilityScore: number;
   /** List of identified issues */
-  issues: string[];
-  /** List of suggestions with explanations */
-  suggestions: Suggestion[];
+  issues: Issue[];
+  /** List of actionable opportunities */
+  opportunities: Opportunity[];
 }
 
 export interface OptimizeRequest {
-  /** The content to optimize */
+  /** The content or URL to optimize */
   content: string;
 }
 
