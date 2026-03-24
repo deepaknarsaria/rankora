@@ -8,9 +8,12 @@ import {
   Zap, 
   Copy, 
   CheckCircle2,
-  ChevronRight,
   Bot,
-  ArrowRight
+  ArrowRight,
+  Search,
+  MessageCircleQuestion,
+  Globe,
+  Eye,
 } from "lucide-react";
 import { useAnalyzeContent, useOptimizeContent } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -188,23 +191,69 @@ export default function Home() {
               exit={{ opacity: 0, scale: 0.95 }} 
               className="space-y-12"
             >
+              {/* Summary bar */}
+              <div className="flex items-center justify-between glass-panel px-6 py-4 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  <span className="text-sm font-semibold text-foreground">Analysis Complete</span>
+                </div>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" />High priority</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" />Medium priority</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-500" />Low priority</span>
+                </div>
+              </div>
+
               {/* Scores Grid — 4 cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-                <ScoreRing score={analyzeMutation.data.seoScore} label="SEO Score" colorClass="stroke-violet-500" />
-                <ScoreRing score={analyzeMutation.data.aeoScore} label="AEO Score" colorClass="stroke-blue-500" />
-                <ScoreRing score={analyzeMutation.data.geoScore} label="GEO Score" colorClass="stroke-teal-500" />
-                <ScoreRing score={analyzeMutation.data.aiVisibilityScore} label="AI Visibility" colorClass="stroke-fuchsia-500" />
+                <ScoreRing
+                  score={analyzeMutation.data.seoScore}
+                  label="SEO Score"
+                  colorClass="stroke-violet-500"
+                  glowColor="bg-violet-600/10"
+                  icon={<Search className="w-4 h-4" />}
+                  description="Search engine ranking potential"
+                />
+                <ScoreRing
+                  score={analyzeMutation.data.aeoScore}
+                  label="AEO Score"
+                  colorClass="stroke-blue-500"
+                  glowColor="bg-blue-600/10"
+                  icon={<MessageCircleQuestion className="w-4 h-4" />}
+                  description="Answer engine readiness"
+                />
+                <ScoreRing
+                  score={analyzeMutation.data.geoScore}
+                  label="GEO Score"
+                  colorClass="stroke-teal-500"
+                  glowColor="bg-teal-600/10"
+                  icon={<Globe className="w-4 h-4" />}
+                  description="Generative engine optimization"
+                />
+                <ScoreRing
+                  score={analyzeMutation.data.aiVisibilityScore}
+                  label="AI Visibility"
+                  colorClass="stroke-fuchsia-500"
+                  glowColor="bg-fuchsia-600/10"
+                  icon={<Eye className="w-4 h-4" />}
+                  description="Overall AI discovery score"
+                />
               </div>
 
               {/* Issues */}
               <div className="glass-panel p-8 rounded-[2rem]">
-                <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-foreground">
-                  <AlertTriangle className="w-6 h-6 text-destructive" />
-                  Issues Found
-                  <span className="ml-auto text-sm font-normal text-muted-foreground">
-                    {(analyzeMutation.data.issues ?? []).length} issue{(analyzeMutation.data.issues ?? []).length !== 1 ? "s" : ""}
+                <div className="flex items-center gap-3 mb-7">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-destructive/15 border border-destructive/25">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground leading-none">Issues Found</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Problems that need your attention</p>
+                  </div>
+                  <span className="ml-auto flex items-center justify-center min-w-[2rem] h-7 px-2.5 rounded-full bg-destructive/15 text-destructive text-xs font-bold border border-destructive/25">
+                    {(analyzeMutation.data.issues ?? []).length}
                   </span>
-                </h3>
+                </div>
                 {(analyzeMutation.data.issues ?? []).length > 0 ? (
                   <div className="space-y-4">
                     {(analyzeMutation.data.issues ?? []).map((issue, i) => {
@@ -256,13 +305,18 @@ export default function Home() {
 
               {/* Opportunities */}
               <div className="glass-panel p-8 rounded-[2rem]">
-                <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-foreground">
-                  <Lightbulb className="w-6 h-6 text-yellow-400" />
-                  Opportunities
-                  <span className="ml-auto text-sm font-normal text-muted-foreground">
-                    {(analyzeMutation.data.opportunities ?? []).length} suggestion{(analyzeMutation.data.opportunities ?? []).length !== 1 ? "s" : ""}
+                <div className="flex items-center gap-3 mb-7">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-yellow-500/15 border border-yellow-500/25">
+                    <Lightbulb className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground leading-none">Opportunities</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Actionable wins to boost your scores</p>
+                  </div>
+                  <span className="ml-auto flex items-center justify-center min-w-[2rem] h-7 px-2.5 rounded-full bg-yellow-500/15 text-yellow-400 text-xs font-bold border border-yellow-500/25">
+                    {(analyzeMutation.data.opportunities ?? []).length}
                   </span>
-                </h3>
+                </div>
                 {(analyzeMutation.data.opportunities ?? []).length > 0 ? (
                   <div className="space-y-5">
                     {(analyzeMutation.data.opportunities ?? []).map((opp, i) => {
