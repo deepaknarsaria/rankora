@@ -357,9 +357,9 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center gap-4">
           {/* Logo */}
           <a href="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="RankPilot AI" className="w-7 h-7 rounded-lg" />
+            <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Rankora AI" className="w-7 h-7 rounded-lg" />
             <span className="font-bold text-gray-900 text-base hidden sm:block">
-              Rank<span className="text-[#4d44e3]">Pilot</span> AI
+              Rankora <span className="text-[#4d44e3]">AI</span>
             </span>
           </a>
 

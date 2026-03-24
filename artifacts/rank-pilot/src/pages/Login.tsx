@@ -36,9 +36,9 @@ export default function Login() {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center px-4">
       {/* Header logo */}
       <a href={import.meta.env.BASE_URL || "/"} className="flex items-center gap-2.5 mb-10">
-        <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="RankPilot AI" className="w-9 h-9 rounded-xl" />
+        <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Rankora AI" className="w-9 h-9 rounded-xl" />
         <span className="font-bold text-gray-900 text-xl font-display">
-          Rank<span className="text-gradient">Pilot</span> AI
+          Rankora <span className="text-gradient">AI</span>
         </span>
       </a>
 
@@ -53,7 +53,7 @@ export default function Login() {
             <Sparkles className="w-6 h-6 text-[#4d44e3]" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 font-display">Welcome back</h1>
-          <p className="text-sm text-gray-500 mt-1">Sign in to your RankPilot AI account</p>
+          <p className="text-sm text-gray-500 mt-1">Sign in to your Rankora AI account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -131,7 +131,7 @@ export default function Login() {
         </p>
       </motion.div>
 
-      <p className="mt-6 text-xs text-gray-400">© 2025 RankPilot AI. All rights reserved.</p>
+      <p className="mt-6 text-xs text-gray-400">© 2026 Rankora AI. All rights reserved.</p>
     </div>
   );
 }

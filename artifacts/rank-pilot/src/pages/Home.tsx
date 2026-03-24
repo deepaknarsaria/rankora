@@ -291,9 +291,9 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <a href="#" className="flex items-center gap-2.5">
-            <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="RankPilot AI" className="w-8 h-8 rounded-lg" />
+            <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Rankora AI" className="w-8 h-8 rounded-lg" />
             <span className="font-bold text-gray-900 text-lg font-display">
-              Rank<span className="text-gradient">Pilot</span> AI
+              Rankora <span className="text-gradient">AI</span>
             </span>
           </a>
 
@@ -403,11 +403,11 @@ export default function Home() {
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4d44e3]/8 border border-[#4d44e3]/20 rounded-full text-xs font-semibold text-[#4d44e3] uppercase tracking-wide">
             <Star className="w-3 h-3" /> SEO · AEO · GEO · AI Visibility
           </span>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tighter leading-[1.08]">
-            Rank<span className="text-gradient">Pilot</span> AI
+          <h1 className="text-4xl md:text-5xl lg:text-5xl font-extrabold text-gray-900 tracking-tighter leading-[1.08]">
+            Optimize Content for Google &amp; <span className="text-gradient">AI</span> — in One Click
           </h1>
           <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-            Paste your content or a URL. Get AI-powered SEO, AEO, GEO &amp; AI Visibility scores — then fix everything in one click.
+            Rankora AI helps you improve SEO, AEO, GEO, and AI visibility with actionable insights and instant optimization.
           </p>
         </motion.div>
 
@@ -550,7 +550,7 @@ export default function Home() {
 
         {/* Microcopy */}
         <p className="text-center text-sm text-gray-400 mt-3 mb-2">
-          Supports URL, text, PDF, DOCX &nbsp;·&nbsp; Results in 10–15 seconds &nbsp;·&nbsp; No signup required
+          Supports URL, text, PDF, DOCX &nbsp;·&nbsp; Get results in 10–15 seconds
         </p>
 
         {/* File loading */}
@@ -588,7 +588,7 @@ export default function Home() {
                 color: "bg-violet-100 text-violet-700",
               },
               {
-                quote: "I replaced three separate tools with RankPilot AI. The AI Visibility score alone is worth it.",
+                quote: "I replaced three separate tools with Rankora AI. The AI Visibility score alone is worth it.",
                 name: "Rahul Desai",
                 role: "Indie Hacker & Blogger",
                 initial: "R",
@@ -736,7 +736,7 @@ export default function Home() {
               One tool. Every score that matters.
             </h2>
             <p className="mt-3 text-gray-500 max-w-xl mx-auto">
-              Stop juggling separate tools. RankPilot AI covers every channel in a single analysis.
+              Stop juggling separate tools. Rankora AI covers every channel in a single analysis.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -834,12 +834,12 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <span className="text-xs font-bold text-[#4d44e3] uppercase tracking-widest">Why RankPilot AI?</span>
+              <span className="text-xs font-bold text-[#4d44e3] uppercase tracking-widest">Why Rankora AI?</span>
               <h2 className="mt-2 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
                 Stop using five tools.<br />Use one.
               </h2>
               <p className="mt-4 text-gray-500 leading-relaxed">
-                Most teams cobble together separate tools for SEO, answer engines, and AI optimization. RankPilot AI gives you every signal in a single, actionable report.
+                Most teams cobble together separate tools for SEO, answer engines, and AI optimization. Rankora AI gives you every signal in a single, actionable report.
               </p>
               <ul className="mt-8 space-y-4">
                 {[
@@ -879,9 +879,9 @@ export default function Home() {
           <div className="text-center mb-10">
             <span className="text-xs font-bold text-[#4d44e3] uppercase tracking-widest">Pricing</span>
             <h2 className="mt-2 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
-              Simple, transparent pricing
+              Simple, Transparent Pricing
             </h2>
-            <p className="mt-3 text-gray-500">Credit-based. Pay for what you use. Upgrade anytime.</p>
+            <p className="mt-3 text-gray-500">Start free. Upgrade as you grow.</p>
 
             {/* Credit info note */}
             <div className="mt-4 inline-flex items-center gap-4 text-xs text-gray-500 bg-white border border-gray-200 rounded-full px-5 py-2">
@@ -1044,13 +1044,13 @@ export default function Home() {
             {/* Brand */}
             <div className="max-w-xs">
               <div className="flex items-center gap-2.5 mb-3">
-                <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="RankPilot AI" className="w-7 h-7 rounded-lg" />
+                <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Rankora AI" className="w-7 h-7 rounded-lg" />
                 <span className="font-bold text-gray-900 font-display">
-                  Rank<span className="text-gradient">Pilot</span> AI
+                  Rankora <span className="text-gradient">AI</span>
                 </span>
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">
-                AI-powered content optimization for SEO, answer engines, and generative AI platforms.
+                AI-powered SEO optimization platform
               </p>
             </div>
             {/* Links */}
@@ -1074,7 +1074,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-10 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-gray-400">© 2025 RankPilot AI. All rights reserved.</p>
+            <p className="text-xs text-gray-400">© 2026 Rankora AI. All rights reserved.</p>
             <div className="flex items-center gap-5 text-xs text-gray-400">
               <a href="#" className="hover:text-gray-700 transition-colors">Privacy</a>
               <a href="#" className="hover:text-gray-700 transition-colors">Terms</a>

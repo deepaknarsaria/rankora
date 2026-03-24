@@ -29,7 +29,7 @@ export default function Signup() {
     setSubmitting(true);
     try {
       await signup(email.trim(), password);
-      toast({ title: "Account created!", description: "Welcome to RankPilot AI. You have 5 free credits to get started." });
+      toast({ title: "Account created!", description: "Welcome to Rankora AI. You have 5 free credits to get started." });
       const hasAnalysis = !!localStorage.getItem("rankpilot_analysis_input");
       navigate(hasAnalysis ? "/dashboard" : "/");
     } catch (err: any) {
@@ -43,9 +43,9 @@ export default function Signup() {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center px-4 py-10">
       {/* Header logo */}
       <a href={import.meta.env.BASE_URL || "/"} className="flex items-center gap-2.5 mb-10">
-        <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="RankPilot AI" className="w-9 h-9 rounded-xl" />
+        <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Rankora AI" className="w-9 h-9 rounded-xl" />
         <span className="font-bold text-gray-900 text-xl font-display">
-          Rank<span className="text-gradient">Pilot</span> AI
+          Rankora <span className="text-gradient">AI</span>
         </span>
       </a>
 
@@ -186,7 +186,7 @@ export default function Signup() {
         </motion.div>
       </div>
 
-      <p className="mt-8 text-xs text-gray-400">© 2025 RankPilot AI. All rights reserved.</p>
+      <p className="mt-8 text-xs text-gray-400">© 2026 Rankora AI. All rights reserved.</p>
     </div>
   );
 }

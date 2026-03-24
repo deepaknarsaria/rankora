@@ -2,7 +2,7 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. **RankPilot AI** — an AI-powered content optimization SaaS tool for SEO, AEO (Answer Engine Optimization), and GEO (Generative Engine Optimization).
+pnpm workspace monorepo using TypeScript. **Rankora AI** — an AI-powered content optimization SaaS tool for SEO, AEO (Answer Engine Optimization), and GEO (Generative Engine Optimization).
 
 ## Stack
 

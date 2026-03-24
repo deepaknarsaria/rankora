@@ -1,0 +1,145 @@
+Update entire application branding from previous name to new brand: "Rankora AI".
+
+IMPORTANT:
+
+* Do NOT change functionality
+* Only update branding, naming, and text consistency across the app
+
+---
+
+🧩 1. GLOBAL BRAND NAME UPDATE
+
+Replace ALL occurrences of old name (e.g., RankPilot AI or others) with:
+
+"Rankora AI"
+
+Also update:
+
+* Page titles
+* Meta titles
+* Navbar logo
+* Footer text
+* Dashboard title
+
+---
+
+🧩 2. LOGO TEXT UPDATE
+
+Navbar logo:
+
+Change to:
+"Rankora AI"
+
+Style:
+
+* Keep clean SaaS style
+* Highlight "AI" with accent color (purple)
+
+---
+
+🧩 3. HERO SECTION UPDATE
+
+Update headline to:
+
+"Optimize Content for Google & AI — in One Click"
+
+Subheadline:
+
+"Rankora AI helps you improve SEO, AEO, GEO, and AI visibility with actionable insights and instant optimization."
+
+CTA Button:
+
+Change to:
+"Analyze & Fix My Content"
+
+---
+
+🧩 4. INPUT SECTION MICROCOPY
+
+Below input box add:
+
+"Supports URL, text, PDF, DOCX • Get results in 10–15 seconds"
+
+---
+
+🧩 5. DASHBOARD TITLE
+
+Update to:
+
+"Rankora AI Dashboard"
+
+---
+
+🧩 6. PRICING SECTION BRANDING
+
+Add heading:
+
+"Simple, Transparent Pricing"
+
+Add subtext:
+
+"Start free. Upgrade as you grow."
+
+---
+
+🧩 7. FOOTER UPDATE
+
+Footer text:
+
+"© 2026 Rankora AI. All rights reserved."
+
+Add:
+
+"AI-powered SEO optimization platform"
+
+---
+
+🧩 8. META TAGS (IMPORTANT FOR SEO)
+
+Update:
+
+Title:
+"Rankora AI – AI SEO, AEO & GEO Optimization Tool"
+
+Description:
+"Analyze and optimize your content for Google and AI engines. Improve rankings, visibility, and performance with Rankora AI."
+
+---
+
+🧩 9. BUTTON CONSISTENCY
+
+Use same CTA everywhere:
+
+* "Analyze & Fix My Content"
+* "Get My SEO Score"
+
+---
+
+🧩 10. BRAND CONSISTENCY CHECK
+
+Ensure:
+
+* Same name everywhere
+* Same tone
+* No old name remains anywhere
+
+---
+
+🎯 GOAL:
+
+Create a consistent, premium SaaS brand identity:
+
+* Clean
+* Modern
+* AI-focused
+* Trustworthy
+
+---
+
+RESULT:
+
+A fully branded product under:
+
+"Rankora AI"
+
+ready for domain connection and launch
