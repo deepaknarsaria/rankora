@@ -9,10 +9,16 @@ import {
   AnalyzeContentBody,
   OptimizeContentBody,
 } from "@workspace/api-zod";
+import { db, usersTable } from "@workspace/db";
+import { eq, sql } from "drizzle-orm";
+import { optionalAuth } from "../middlewares/auth.js";
 
 const router: IRouter = Router();
 
-/* ── Credit system ── */
+/* ── Apply optional auth to all content routes ── */
+router.use(optionalAuth);
+
+/* ── Credit system (IP-based fallback for unauthenticated users) ── */
 const FREE_CREDITS = 5;
 const creditStore = new Map<string, number>();
 
@@ -22,14 +28,60 @@ function getIp(req: Request): string {
   return ip.trim();
 }
 
-function getCredits(ip: string): number {
+function getIpCredits(ip: string): number {
   if (!creditStore.has(ip)) creditStore.set(ip, FREE_CREDITS);
   return creditStore.get(ip)!;
 }
 
-function deductCredits(ip: string, amount: number): void {
-  const current = getCredits(ip);
+function deductIpCredits(ip: string, amount: number): void {
+  const current = getIpCredits(ip);
   creditStore.set(ip, Math.max(0, current - amount));
+}
+
+/* ── User-based credit helpers (for authenticated users) ── */
+function getPlanTotal(plan: string): number {
+  if (plan === "pro") return 50;
+  if (plan === "premium") return 200;
+  return 5;
+}
+
+async function getUserCreditInfo(userId: number): Promise<{ credits: number; plan: string }> {
+  const [user] = await db
+    .select({ credits: usersTable.credits, plan: usersTable.plan })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId))
+    .limit(1);
+  return user ?? { credits: 0, plan: "free" };
+}
+
+async function deductUserCredits(userId: number, amount: number): Promise<{ credits: number; plan: string }> {
+  const [updated] = await db
+    .update(usersTable)
+    .set({ credits: sql`GREATEST(0, ${usersTable.credits} - ${amount})` })
+    .where(eq(usersTable.id, userId))
+    .returning({ credits: usersTable.credits, plan: usersTable.plan });
+  return updated ?? { credits: 0, plan: "free" };
+}
+
+/* ── Unified credit check / deduct helpers ── */
+async function checkCredits(req: Request, needed: number): Promise<{ ok: boolean; remaining: number; total: number }> {
+  if (req.user) {
+    const info = await getUserCreditInfo(req.user.id);
+    return { ok: info.credits >= needed, remaining: info.credits, total: getPlanTotal(info.plan) };
+  }
+  const ip = getIp(req);
+  const remaining = getIpCredits(ip);
+  return { ok: remaining >= needed, remaining, total: FREE_CREDITS };
+}
+
+async function spendCredits(req: Request, amount: number): Promise<{ remaining: number; total: number }> {
+  if (req.user) {
+    const updated = await deductUserCredits(req.user.id, amount);
+    return { remaining: updated.credits, total: getPlanTotal(updated.plan) };
+  }
+  const ip = getIp(req);
+  deductIpCredits(ip, amount);
+  return { remaining: getIpCredits(ip), total: FREE_CREDITS };
 }
 
 /* ── Multer — memory storage, 10 MB limit ── */
@@ -267,18 +319,18 @@ ${content}`;
 /* ══════════════════════════════════════
    GET /credits  — returns remaining credits
 ══════════════════════════════════════ */
-router.get("/credits", (req, res) => {
-  const ip = getIp(req);
-  res.json({ creditsRemaining: getCredits(ip), creditsTotal: FREE_CREDITS });
+router.get("/credits", async (req, res) => {
+  const credit = await checkCredits(req, 0);
+  res.json({ creditsRemaining: credit.remaining, creditsTotal: credit.total });
 });
 
 /* ══════════════════════════════════════
    POST /analyze  (text / URL)
 ══════════════════════════════════════ */
 router.post("/analyze", async (req, res) => {
-  const ip = getIp(req);
-  if (getCredits(ip) < 1) {
-    res.status(429).json({ error: "Credit limit reached", creditsRemaining: 0, creditsTotal: FREE_CREDITS });
+  const credit = await checkCredits(req, 1);
+  if (!credit.ok) {
+    res.status(429).json({ error: "You've reached your credit limit. Upgrade to continue.", creditsRemaining: 0, creditsTotal: credit.total });
     return;
   }
 
@@ -310,8 +362,8 @@ router.post("/analyze", async (req, res) => {
 
   try {
     const analysis = await runAnalysis(content, keywords);
-    deductCredits(ip, 1);
-    res.json({ ...analysis, creditsRemaining: getCredits(ip), creditsTotal: FREE_CREDITS });
+    const spent = await spendCredits(req, 1);
+    res.json({ ...analysis, creditsRemaining: spent.remaining, creditsTotal: spent.total });
   } catch (err) {
     req.log.error({ err }, "Failed to analyze content");
     res.status(500).json({ error: "Failed to analyze content. Please try again." });
@@ -340,9 +392,9 @@ const uploadMiddleware = (req: Request, res: Response, next: NextFunction) => {
 };
 
 router.post("/analyze-file", uploadMiddleware, async (req, res) => {
-  const ip = getIp(req);
-  if (getCredits(ip) < 1) {
-    res.status(429).json({ error: "Credit limit reached", creditsRemaining: 0, creditsTotal: FREE_CREDITS });
+  const credit = await checkCredits(req, 1);
+  if (!credit.ok) {
+    res.status(429).json({ error: "You've reached your credit limit. Upgrade to continue.", creditsRemaining: 0, creditsTotal: credit.total });
     return;
   }
 
@@ -370,8 +422,8 @@ router.post("/analyze-file", uploadMiddleware, async (req, res) => {
 
   try {
     const analysis = await runAnalysis(extractedContent, keywords);
-    deductCredits(ip, 1);
-    res.json({ ...analysis, extractedContent, creditsRemaining: getCredits(ip), creditsTotal: FREE_CREDITS });
+    const spent = await spendCredits(req, 1);
+    res.json({ ...analysis, extractedContent, creditsRemaining: spent.remaining, creditsTotal: spent.total });
   } catch (err) {
     req.log.error({ err }, "Failed to analyze file");
     res.status(500).json({ error: "Failed to analyze the file. Please try again." });
@@ -382,9 +434,9 @@ router.post("/analyze-file", uploadMiddleware, async (req, res) => {
    POST /optimize  (text / URL)
 ══════════════════════════════════════ */
 router.post("/optimize", async (req, res) => {
-  const ip = getIp(req);
-  if (getCredits(ip) < 2) {
-    res.status(429).json({ error: "Credit limit reached. Optimization costs 2 credits.", creditsRemaining: getCredits(ip), creditsTotal: FREE_CREDITS });
+  const credit = await checkCredits(req, 2);
+  if (!credit.ok) {
+    res.status(429).json({ error: "You've reached your credit limit. Upgrade to continue.", creditsRemaining: credit.remaining, creditsTotal: credit.total });
     return;
   }
 
@@ -481,7 +533,7 @@ ${content}`;
     const rawOutput = (response.choices[0]?.message?.content ?? "{}").replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     const optimized = JSON.parse(rawOutput);
 
-    deductCredits(ip, 2);
+    const spent = await spendCredits(req, 2);
     res.json({
       title: String(optimized.title ?? ""),
       metaDescription: String(optimized.metaDescription ?? ""),
@@ -505,6 +557,8 @@ ${content}`;
         : [],
       conclusion: String(optimized.conclusion ?? ""),
       rawContent: String(optimized.rawContent ?? ""),
+      creditsRemaining: spent.remaining,
+      creditsTotal: spent.total,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to optimize content");

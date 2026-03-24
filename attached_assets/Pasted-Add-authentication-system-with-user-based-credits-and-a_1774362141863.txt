@@ -1,0 +1,189 @@
+Add authentication system with user-based credits and anti-abuse protection.
+
+IMPORTANT:
+
+* Do NOT break existing app
+* Integrate with current analysis + credit system
+
+---
+
+🧩 1. DATABASE SETUP
+
+Use simple database (SQLite or Supabase)
+
+Create User table:
+
+* id
+* email (unique)
+* password (hashed)
+* credits (number)
+* plan (free / pro / premium)
+* created_at
+
+---
+
+🧩 2. SIGNUP SYSTEM
+
+Create endpoint:
+
+POST /signup
+
+Requirements:
+
+* Accept:
+  email, password
+
+* Validate:
+
+  * Email format (valid email only)
+  * Password min 6 characters
+
+* Check:
+
+  * If email already exists → return error:
+    "User already exists"
+
+* Hash password using bcrypt
+
+* Create user with:
+  plan = "free"
+  credits = 5
+
+* Return success
+
+---
+
+🧩 3. LOGIN SYSTEM
+
+POST /login
+
+* Verify email + password
+* Return auth token (JWT)
+
+---
+
+🧩 4. AUTH MIDDLEWARE
+
+* Protect routes:
+  /analyze
+  /optimize
+
+* Require valid JWT token
+
+---
+
+🧩 5. CREDIT SYSTEM (USER-BASED)
+
+Before processing request:
+
+* Check user credits
+
+IF credits <= 0:
+return error:
+"You’ve reached your limit. Upgrade to continue."
+
+---
+
+Deduct credits:
+
+* analyze → -1 credit
+* optimize → -2 credits
+
+Update DB
+
+---
+
+🧩 6. FRONTEND AUTH UI
+
+Add:
+
+* Signup page (/signup)
+* Login page (/login)
+
+Forms:
+
+* Email
+* Password
+
+---
+
+🧩 7. SESSION MANAGEMENT
+
+* Store JWT in localStorage
+* Attach token to API requests
+
+---
+
+🧩 8. SHOW USER INFO
+
+In dashboard:
+
+* Show:
+  "Credits left: X"
+
+* Show plan:
+  Free / Pro / Premium
+
+---
+
+🧩 9. ANTI-ABUSE PROTECTION
+
+* Email must be UNIQUE
+* Do NOT allow duplicate signup
+
+---
+
+🧠 EMAIL VALIDATION:
+
+* Use regex for valid email
+* Reject:
+  fake formats
+  empty values
+
+---
+
+🧠 OPTIONAL (STRONGER PROTECTION):
+
+* Prevent disposable emails (optional):
+  block domains like:
+  mailinator, temp-mail
+
+---
+
+🧩 10. UPGRADE FLOW
+
+When credits exhausted:
+
+* Show:
+  "Upgrade to continue"
+
+* Redirect to pricing section
+
+---
+
+🧩 11. LOGOUT
+
+* Clear token
+* Redirect to homepage
+
+---
+
+🎯 GOAL:
+
+Build a secure SaaS system where:
+
+* Each user has unique account
+* Credits are tracked per user
+* Free credits cannot be abused
+* Upgrade is required after limit
+
+---
+
+RESULT:
+
+A real SaaS backend with:
+
+* Authentication
+* Credit system
+* Anti-abuse protection
+* Scalable user management

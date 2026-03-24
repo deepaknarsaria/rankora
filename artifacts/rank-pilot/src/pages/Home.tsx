@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sparkles,
   RefreshCw,
@@ -182,6 +183,7 @@ function isUrl(input: string): boolean {
    MAIN PAGE
 ══════════════════════════════════════ */
 export default function Home() {
+  const { user, logout, authFetch } = useAuth();
   const [content, setContent] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [fileAnalysisError, setFileAnalysisError] = useState<string | null>(null);
@@ -210,7 +212,7 @@ export default function Home() {
     } else {
       setCurrency("USD");
     }
-    fetch("/api/credits")
+    authFetch("/api/credits")
       .then(r => r.json())
       .then((d: any) => {
         if (typeof d.creditsRemaining === "number" && typeof d.creditsTotal === "number") {
@@ -249,7 +251,7 @@ export default function Home() {
       const formData = new FormData();
       formData.append("file", file);
       if (targetKeywords.trim()) formData.append("keywords", targetKeywords.trim());
-      const resp = await fetch("/api/analyze-file", { method: "POST", body: formData });
+      const resp = await authFetch("/api/analyze-file", { method: "POST", body: formData });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error ?? "Failed to analyze file.");
       localStorage.setItem("rankpilot_analysis_input", JSON.stringify({
@@ -302,14 +304,42 @@ export default function Home() {
             <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
           </nav>
 
-          {/* CTA + mobile toggle */}
-          <div className="flex items-center gap-3">
-            <a
-              href="#analyzer"
-              className="hidden sm:inline-flex items-center gap-2 px-5 py-2 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 hover:-translate-y-0.5"
-            >
-              <Sparkles className="w-3.5 h-3.5" /> Try Free
-            </a>
+          {/* CTA + auth + mobile toggle */}
+          <div className="flex items-center gap-2.5">
+            {user ? (
+              <>
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4d44e3]/8 rounded-lg text-xs font-semibold text-[#4d44e3] border border-[#4d44e3]/20">
+                  {user.credits} credits
+                </span>
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg transition-colors"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => { logout(); navigate("/"); }}
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <a
+                  href={`${import.meta.env.BASE_URL}login`}
+                  className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  Sign in
+                </a>
+                <a
+                  href={`${import.meta.env.BASE_URL}signup`}
+                  className="hidden sm:inline-flex items-center gap-2 px-5 py-2 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 hover:-translate-y-0.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Try Free
+                </a>
+              </>
+            )}
             <button
               onClick={() => setMobileMenuOpen(o => !o)}
               className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
@@ -338,10 +368,29 @@ export default function Home() {
                   {["Features", "How it Works", "Pricing"][i]}
                 </a>
               ))}
-              <a href="#analyzer" onClick={() => setMobileMenuOpen(false)}
-                className="block mt-2 px-3 py-2.5 bg-[#4d44e3] text-white rounded-xl text-sm font-semibold text-center">
-                Try Free
-              </a>
+              {user ? (
+                <>
+                  <button onClick={() => { setMobileMenuOpen(false); navigate("/dashboard"); }}
+                    className="block w-full text-left mt-2 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700">
+                    Dashboard
+                  </button>
+                  <button onClick={() => { setMobileMenuOpen(false); logout(); navigate("/"); }}
+                    className="block w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-500">
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <a href={`${import.meta.env.BASE_URL}login`} onClick={() => setMobileMenuOpen(false)}
+                    className="block mt-2 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 text-center">
+                    Sign in
+                  </a>
+                  <a href={`${import.meta.env.BASE_URL}signup`} onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2.5 bg-[#4d44e3] text-white rounded-xl text-sm font-semibold text-center">
+                    Try Free
+                  </a>
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

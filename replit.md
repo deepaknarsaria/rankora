@@ -63,11 +63,29 @@ artifacts-monorepo/
 └── package.json
 ```
 
+## Auth System
+
+**JWT-based auth** with user-based credit tracking:
+
+- `POST /api/signup` — create account `{ email, password }` → `{ token, user }`. Validates email format, rejects disposable domains, hashes with bcrypt. New users get 5 credits on free plan.
+- `POST /api/login` — `{ email, password }` → `{ token, user }`. Returns JWT (7d expiry) signed with `JWT_SECRET` env var.
+- `GET /api/me` — returns current user (requires `Authorization: Bearer <token>`)
+- `POST /api/logout` — stateless logout (returns success; client clears localStorage)
+- JWT stored in localStorage as `rankpilot_token`; user info in `rankpilot_user`
+- `AuthContext` in `rank-pilot/src/contexts/AuthContext.tsx` manages auth state and calls `setAuthTokenGetter` so all generated API hooks automatically include the JWT
+- `optionalAuth` middleware: attaches `req.user` from JWT; if no/invalid token, continues unauthenticated
+- **Dual credit system**: authenticated users use DB-based credits (persisted); unauthenticated users use IP-based in-memory credits (legacy)
+
+## Database Schema
+
+- `rankpilot_users` table: `id`, `email` (unique), `password_hash`, `credits` (default 5), `plan` (free/pro/premium), `created_at`
+
 ## API Endpoints
 
 - `GET /api/healthz` — health check
-- `POST /api/analyze` — analyze content for SEO/AEO/GEO (body: `{ content: string }`)
-- `POST /api/optimize` — rewrite/optimize content (body: `{ content: string }`)
+- `POST /api/analyze` — analyze content for SEO/AEO/GEO (body: `{ content: string, keywords?: string }`). Deducts 1 credit.
+- `POST /api/optimize` — rewrite/optimize content (body: `{ content: string, keywords?: string }`). Deducts 2 credits.
+- `GET /api/credits` — returns `{ creditsRemaining, creditsTotal }` (auth-aware)
 
 ## TypeScript & Composite Projects
 

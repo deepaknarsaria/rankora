@@ -5,12 +5,13 @@ import {
   Sparkles, RefreshCw, AlertTriangle, Lightbulb, Zap, Copy, CheckCircle2,
   Bot, ArrowRight, Search, MessageCircleQuestion, Globe, Eye, Link2, HelpCircle,
   FileText, Tag, XCircle, Download, TrendingUp, Check, BarChart2, Menu, X,
-  Home, ChevronRight, Plus, Target, Layers, Wand2,
+  Home, ChevronRight, Plus, Target, Layers, Wand2, LogOut, User,
 } from "lucide-react";
 import { useAnalyzeContent, useOptimizeContent } from "@workspace/api-client-react";
 import type { Issue, Opportunity, KeywordAnalysisItem, DetectedKeywords, ContentSection, FaqItem } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScoreRing } from "@/components/ScoreRing";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* ── Stored input schema ── */
 interface StoredInput {
@@ -173,6 +174,7 @@ const NAV_ITEMS = [
 export default function Dashboard() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user, logout, authFetch } = useAuth();
 
   /* ── Stored data ── */
   const [storedInput, setStoredInput] = useState<StoredInput | null>(null);
@@ -218,9 +220,9 @@ export default function Dashboard() {
     }
   }, [navigate]);
 
-  /* ── Fetch initial credits ── */
+  /* ── Fetch initial credits (auth-aware) ── */
   useEffect(() => {
-    fetch("/api/credits").then(r => r.json()).then((d: any) => {
+    authFetch("/api/credits").then(r => r.json()).then((d: any) => {
       if (typeof d.creditsRemaining === "number") {
         setCredits({ remaining: d.creditsRemaining, total: d.creditsTotal ?? 5 });
       }
@@ -369,6 +371,13 @@ export default function Dashboard() {
 
           <div className="flex-1" />
 
+          {/* User plan badge */}
+          {user && (
+            <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border bg-[#4d44e3]/8 border-[#4d44e3]/20 text-[#4d44e3]">
+              {user.plan}
+            </span>
+          )}
+
           {/* Credits */}
           <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
             credits.remaining === 0 ? "bg-red-50 border-red-200 text-red-700"
@@ -386,6 +395,17 @@ export default function Dashboard() {
           >
             <Plus className="w-3.5 h-3.5" /> New Analysis
           </button>
+
+          {/* User menu */}
+          {user && (
+            <button
+              onClick={() => { logout(); navigate("/"); }}
+              title={`Sign out (${user.email})`}
+              className="hidden sm:flex items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
 
           {/* Mobile sidebar toggle */}
           <button onClick={() => setSidebarOpen(o => !o)} className="lg:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
