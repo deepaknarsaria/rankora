@@ -201,18 +201,46 @@ export default function Home() {
     issues: Issue[]; opportunities: Opportunity[];
   } | null>(null);
 
+  /* ── Credits & currency ── */
+  const [credits, setCredits] = useState<{ remaining: number; total: number }>({ remaining: 5, total: 5 });
+  const [currency, setCurrency] = useState<"INR" | "USD">("INR");
+
   const { toast } = useToast();
   const inputIsUrl = isUrl(content);
 
+  /* ── Locale detection + initial credits fetch ── */
+  useEffect(() => {
+    const locale = navigator.language ?? "";
+    if (locale.startsWith("en-IN") || locale.startsWith("hi") || locale.startsWith("bn") || locale.startsWith("ta")) {
+      setCurrency("INR");
+    } else {
+      setCurrency("USD");
+    }
+    fetch("/api/credits")
+      .then(r => r.json())
+      .then((d: any) => {
+        if (typeof d.creditsRemaining === "number" && typeof d.creditsTotal === "number") {
+          setCredits({ remaining: d.creditsRemaining, total: d.creditsTotal });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const analyzeMutation = useAnalyzeContent({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data: any) => {
         setHasAnalyzed(true);
         setAnalyzeError(null);
+        if (typeof data?.creditsRemaining === "number") {
+          setCredits({ remaining: data.creditsRemaining, total: data.creditsTotal ?? 5 });
+        }
         toast({ title: "Analysis complete!", description: "Your content has been fully scored." });
       },
       onError: (err: any) => {
         const msg = err?.response?.data?.error || err?.message || "An error occurred during analysis.";
+        if (err?.response?.data?.creditsRemaining === 0) {
+          setCredits({ remaining: 0, total: err?.response?.data?.creditsTotal ?? 5 });
+        }
         setAnalyzeError(msg);
       },
     },
@@ -223,6 +251,9 @@ export default function Home() {
       onSuccess: () => setOptimizeError(null),
       onError: (err: any) => {
         const msg = err?.response?.data?.error || err?.message || "An error occurred during optimization.";
+        if (err?.response?.data?.creditsRemaining !== undefined) {
+          setCredits({ remaining: err?.response?.data?.creditsRemaining, total: err?.response?.data?.creditsTotal ?? 5 });
+        }
         setOptimizeError(msg);
       },
     },
@@ -327,7 +358,15 @@ export default function Home() {
       formData.append("file", file);
       const resp = await fetch("/api/analyze-file", { method: "POST", body: formData });
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error ?? "Failed to analyze file.");
+      if (!resp.ok) {
+        if (data.creditsRemaining !== undefined) {
+          setCredits({ remaining: data.creditsRemaining, total: data.creditsTotal ?? 5 });
+        }
+        throw new Error(data.error ?? "Failed to analyze file.");
+      }
+      if (typeof data.creditsRemaining === "number") {
+        setCredits({ remaining: data.creditsRemaining, total: data.creditsTotal ?? 5 });
+      }
       setFileAnalysisData(data);
       if (data.extractedContent) setContent(data.extractedContent);
       setHasAnalyzed(true);
@@ -341,6 +380,7 @@ export default function Home() {
 
   /* Unified analyze entry point */
   const handleAnalyzeClick = () => {
+    if (credits.remaining <= 0) return;
     if (uploadedFile) {
       handleAnalyzeFile(uploadedFile);
     } else {
@@ -472,8 +512,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── ANALYZER TOOL (unchanged UI) ── */}
+      {/* ── ANALYZER TOOL ── */}
       <section id="analyzer" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+
+        {/* Credits indicator */}
+        {!showOptimized && (
+          <div className="flex items-center justify-end mb-4">
+            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold border ${
+              credits.remaining === 0
+                ? "bg-red-50 border-red-200 text-red-700"
+                : credits.remaining <= 2
+                ? "bg-amber-50 border-amber-200 text-amber-700"
+                : "bg-emerald-50 border-emerald-200 text-emerald-700"
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${credits.remaining === 0 ? "bg-red-500" : credits.remaining <= 2 ? "bg-amber-500 animate-pulse" : "bg-emerald-500"}`} />
+              Credits left: {credits.remaining} / {credits.total}
+            </div>
+          </div>
+        )}
+
+        {/* Out-of-credits banner */}
+        <AnimatePresence>
+          {credits.remaining === 0 && !showOptimized && !showResults && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+            >
+              <div className="flex-1">
+                <p className="font-bold text-amber-900 text-sm">You've reached your limit.</p>
+                <p className="text-amber-700 text-xs mt-0.5">Upgrade to continue analyzing and optimizing content.</p>
+              </div>
+              <a
+                href="#pricing"
+                className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-[#4d44e3] text-white rounded-xl font-bold text-sm shadow-sm hover:bg-[#4338ca] transition-colors"
+              >
+                <Zap className="w-3.5 h-3.5 text-yellow-300" /> Upgrade Plan
+              </a>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Input */}
         {!showOptimized && (
@@ -483,42 +562,79 @@ export default function Home() {
             transition={{ delay: 0.1 }}
             className="mb-10"
           >
+            {/* File chip */}
+            {uploadedFile && (
+              <div className="mb-3 flex items-center gap-2.5 px-4 py-2.5 bg-[#4d44e3]/8 border border-[#4d44e3]/25 rounded-xl w-fit">
+                <Paperclip className="w-4 h-4 text-[#4d44e3]" />
+                <span className="text-sm font-medium text-[#4d44e3] max-w-xs truncate">{uploadedFile.name}</span>
+                <button
+                  onClick={handleRemoveFile}
+                  className="ml-1 text-[#4d44e3]/60 hover:text-[#4d44e3] transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-[#4d44e3]/30 focus-within:border-[#4d44e3]/50 transition-all">
               <textarea
                 value={content}
                 onChange={handleContentChange}
-                className="w-full h-52 md:h-64 bg-transparent border-0 resize-none p-5 text-base md:text-lg placeholder:text-gray-400 focus:outline-none focus:ring-0 text-gray-900 leading-relaxed"
-                placeholder="Paste your content OR a website URL (https://...)..."
+                disabled={!!uploadedFile}
+                className="w-full h-52 md:h-64 bg-transparent border-0 resize-none p-5 text-base md:text-lg placeholder:text-gray-400 focus:outline-none focus:ring-0 text-gray-900 leading-relaxed disabled:opacity-60 disabled:cursor-not-allowed"
+                placeholder={uploadedFile ? `File ready: ${uploadedFile.name}` : "Paste your content OR a website URL (https://...)..."}
               />
-              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
-                <div className="text-sm text-gray-400">
-                  {content.length > 0 && (
-                    inputIsUrl ? (
-                      <span className="flex items-center gap-1.5 text-[#4d44e3] font-medium">
-                        <span className="w-2 h-2 rounded-full bg-[#4d44e3] animate-pulse" />
-                        URL detected
-                      </span>
-                    ) : (
-                      <span>{content.trim().split(/\s+/).length} words</span>
-                    )
-                  )}
+              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50 flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  {/* File upload button */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".txt,.pdf,.docx,.doc"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-[#4d44e3] border border-gray-200 hover:border-[#4d44e3]/40 bg-white rounded-lg transition-all"
+                    title="Upload .txt, .pdf, or .docx"
+                  >
+                    <Upload className="w-3.5 h-3.5" /> Upload File
+                  </button>
+                  <span className="text-xs text-gray-300">.txt · .pdf · .docx</span>
                 </div>
-                <button
-                  onClick={handleAnalyze}
-                  disabled={!content.trim() || analyzeMutation.isPending}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  {analyzeMutation.isPending ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, ease: "linear", duration: 1 }}>
-                      <RefreshCw className="w-4 h-4" />
-                    </motion.div>
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
-                  )}
-                  {analyzeMutation.isPending
-                    ? (inputIsUrl ? "Analyzing website..." : "Analyzing...")
-                    : "Analyze Content"}
-                </button>
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-gray-400">
+                    {!uploadedFile && content.length > 0 && (
+                      inputIsUrl ? (
+                        <span className="flex items-center gap-1.5 text-[#4d44e3] font-medium">
+                          <span className="w-2 h-2 rounded-full bg-[#4d44e3] animate-pulse" />
+                          URL detected
+                        </span>
+                      ) : (
+                        <span>{content.trim().split(/\s+/).length} words</span>
+                      )
+                    )}
+                  </div>
+                  <button
+                    onClick={handleAnalyzeClick}
+                    disabled={(!content.trim() && !uploadedFile) || analyzeMutation.isPending || isFileAnalyzing || credits.remaining <= 0}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {(analyzeMutation.isPending || isFileAnalyzing) ? (
+                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, ease: "linear", duration: 1 }}>
+                        <RefreshCw className="w-4 h-4" />
+                      </motion.div>
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    {analyzeMutation.isPending || isFileAnalyzing
+                      ? (uploadedFile ? "Processing file..." : inputIsUrl ? "Analyzing website..." : "Analyzing...")
+                      : credits.remaining <= 0
+                      ? "No Credits Left"
+                      : "Analyze Content"}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -526,14 +642,19 @@ export default function Home() {
 
         {/* Loading */}
         <AnimatePresence mode="wait">
+          {isFileAnalyzing && <LoadingPanel key="file-loading" mode="file" isUrl={false} />}
           {analyzeMutation.isPending && <LoadingPanel key="analyze-loading" mode="analyze" isUrl={inputIsUrl} />}
           {optimizeMutation.isPending && <LoadingPanel key="optimize-loading" mode="optimize" isUrl={inputIsUrl} />}
         </AnimatePresence>
 
         {/* Errors */}
         <AnimatePresence>
-          {analyzeError && !analyzeMutation.isPending && (
-            <ErrorCard key="analyze-error" message={analyzeError} onRetry={() => { setAnalyzeError(null); handleAnalyze(); }} />
+          {(analyzeError || fileAnalysisError) && !analyzeMutation.isPending && !isFileAnalyzing && (
+            <ErrorCard
+              key="analyze-error"
+              message={analyzeError ?? fileAnalysisError ?? ""}
+              onRetry={() => { setAnalyzeError(null); setFileAnalysisError(null); handleAnalyzeClick(); }}
+            />
           )}
           {optimizeError && !optimizeMutation.isPending && (
             <ErrorCard key="optimize-error" message={optimizeError} onRetry={() => { setOptimizeError(null); handleOptimize(); }} />
@@ -564,10 +685,10 @@ export default function Home() {
 
               {/* Score Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <ScoreRing score={analyzeMutation.data!.seoScore} label="SEO Score" colorClass="stroke-violet-500" glowColor="" icon={<Search className="w-4 h-4" />} description="Search engine ranking potential" />
-                <ScoreRing score={analyzeMutation.data!.aeoScore} label="AEO Score" colorClass="stroke-blue-500" glowColor="" icon={<MessageCircleQuestion className="w-4 h-4" />} description="Answer engine readiness" />
-                <ScoreRing score={analyzeMutation.data!.geoScore} label="GEO Score" colorClass="stroke-teal-500" glowColor="" icon={<Globe className="w-4 h-4" />} description="Generative engine optimization" />
-                <ScoreRing score={analyzeMutation.data!.aiVisibilityScore} label="AI Visibility" colorClass="stroke-indigo-500" glowColor="" icon={<Eye className="w-4 h-4" />} description="Overall AI discovery score" />
+                <ScoreRing score={analysisData!.seoScore} label="SEO Score" colorClass="stroke-violet-500" glowColor="" icon={<Search className="w-4 h-4" />} description="Search engine ranking potential" />
+                <ScoreRing score={analysisData!.aeoScore} label="AEO Score" colorClass="stroke-blue-500" glowColor="" icon={<MessageCircleQuestion className="w-4 h-4" />} description="Answer engine readiness" />
+                <ScoreRing score={analysisData!.geoScore} label="GEO Score" colorClass="stroke-teal-500" glowColor="" icon={<Globe className="w-4 h-4" />} description="Generative engine optimization" />
+                <ScoreRing score={analysisData!.aiVisibilityScore} label="AI Visibility" colorClass="stroke-indigo-500" glowColor="" icon={<Eye className="w-4 h-4" />} description="Overall AI discovery score" />
               </div>
 
               {/* Issues */}
@@ -581,13 +702,13 @@ export default function Home() {
                     <p className="text-xs text-gray-500 mt-0.5">Problems that need your attention</p>
                   </div>
                   <span className="ml-auto flex items-center justify-center min-w-[1.75rem] h-6 px-2 rounded-full bg-red-50 text-red-600 text-xs font-bold border border-red-200">
-                    {(analyzeMutation.data!.issues ?? []).length}
+                    {(analysisData!.issues ?? []).length}
                   </span>
                 </div>
 
-                {(analyzeMutation.data!.issues ?? []).length > 0 ? (
+                {(analysisData!.issues ?? []).length > 0 ? (
                   <div className="space-y-3">
-                    {(analyzeMutation.data!.issues ?? []).map((issue: Issue, i: number) => {
+                    {(analysisData!.issues ?? []).map((issue: Issue, i: number) => {
                       const priorityBadge: Record<string, string> = {
                         High:   "bg-red-100 text-red-700 border-red-200",
                         Medium: "bg-amber-100 text-amber-700 border-amber-200",
@@ -645,13 +766,13 @@ export default function Home() {
                     <p className="text-xs text-gray-500 mt-0.5">Actionable wins to boost your scores</p>
                   </div>
                   <span className="ml-auto flex items-center justify-center min-w-[1.75rem] h-6 px-2 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                    {(analyzeMutation.data!.opportunities ?? []).length}
+                    {(analysisData!.opportunities ?? []).length}
                   </span>
                 </div>
 
-                {(analyzeMutation.data!.opportunities ?? []).length > 0 ? (
+                {(analysisData!.opportunities ?? []).length > 0 ? (
                   <div className="space-y-4">
-                    {(analyzeMutation.data!.opportunities ?? []).map((opp: Opportunity, i: number) => {
+                    {(analysisData!.opportunities ?? []).map((opp: Opportunity, i: number) => {
                       const priorityBadge: Record<string, string> = {
                         High:   "bg-violet-100 text-violet-700 border-violet-200",
                         Medium: "bg-blue-100 text-blue-700 border-blue-200",
@@ -1052,28 +1173,79 @@ export default function Home() {
       {/* ── PRICING ── */}
       <section id="pricing" className="py-20 bg-[#f8fafc]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
+          <div className="text-center mb-10">
             <span className="text-xs font-bold text-[#4d44e3] uppercase tracking-widest">Pricing</span>
             <h2 className="mt-2 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
               Simple, transparent pricing
             </h2>
-            <p className="mt-3 text-gray-500">Start free. Upgrade when you need more.</p>
+            <p className="mt-3 text-gray-500">Credit-based. Pay for what you use. Upgrade anytime.</p>
+
+            {/* Credit info note */}
+            <div className="mt-4 inline-flex items-center gap-4 text-xs text-gray-500 bg-white border border-gray-200 rounded-full px-5 py-2">
+              <span className="flex items-center gap-1.5"><Zap className="w-3 h-3 text-[#4d44e3]" /> 1 analysis = 1 credit</span>
+              <span className="w-px h-3 bg-gray-200" />
+              <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-[#4d44e3]" /> 1 optimization = 2 credits</span>
+            </div>
+
+            {/* Currency toggle */}
+            <div className="mt-6 flex items-center justify-center">
+              <div className="flex items-center gap-1 bg-gray-100 border border-gray-200 rounded-full p-1">
+                <button
+                  onClick={() => setCurrency("INR")}
+                  className={`px-5 py-1.5 rounded-full text-sm font-bold transition-all duration-200 ${
+                    currency === "INR"
+                      ? "bg-[#4d44e3] text-white shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  ₹ INR
+                </button>
+                <button
+                  onClick={() => setCurrency("USD")}
+                  className={`px-5 py-1.5 rounded-full text-sm font-bold transition-all duration-200 ${
+                    currency === "USD"
+                      ? "bg-[#4d44e3] text-white shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  $ USD
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+
+          <div className="grid md:grid-cols-3 gap-6">
             {/* Free */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm flex flex-col">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Free</p>
-              <p className="text-4xl font-extrabold text-gray-900 font-display">$0</p>
-              <p className="text-sm text-gray-500 mt-1 mb-6">Forever free, no credit card needed</p>
-              <ul className="space-y-3 mb-8">
+              <div className="mb-1">
+                <span className="text-4xl font-extrabold text-gray-900 font-display">
+                  {currency === "INR" ? "₹0" : "$0"}
+                </span>
+                <span className="text-sm text-gray-400 ml-1">/month</span>
+              </div>
+              <p className="text-sm text-gray-500 mb-1">Forever free, no credit card needed</p>
+              <div className="flex items-center gap-1.5 mb-6 text-xs font-semibold text-[#4d44e3]">
+                <Zap className="w-3 h-3" /> 5 credits / month
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
                 {[
-                  "3 content analyses per day",
+                  "5 monthly credits",
                   "SEO, AEO, GEO & AI Visibility scores",
                   "Issues & opportunities report",
-                  "Basic optimization suggestions",
+                  "Basic analysis",
                 ].map(item => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-gray-700">
                     <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    {item}
+                  </li>
+                ))}
+                {[
+                  "Fix Everything (AI rewrite)",
+                  "File upload",
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-gray-400 line-through">
+                    <XCircle className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
                     {item}
                   </li>
                 ))}
@@ -1083,22 +1255,31 @@ export default function Home() {
                 Get Started Free
               </a>
             </div>
-            {/* Pro */}
-            <div className="relative bg-[#4d44e3] rounded-2xl p-8 shadow-lg overflow-hidden">
+
+            {/* Pro — highlighted */}
+            <div className="relative bg-[#4d44e3] rounded-2xl p-8 shadow-xl overflow-hidden flex flex-col">
               <div className="absolute top-0 right-0 m-4">
                 <span className="px-3 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full">Most Popular</span>
               </div>
               <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-2">Pro</p>
-              <p className="text-4xl font-extrabold text-white font-display">$29<span className="text-lg font-medium text-white/70">/mo</span></p>
-              <p className="text-sm text-white/60 mt-1 mb-6">Everything you need to dominate search</p>
-              <ul className="space-y-3 mb-8">
+              <div className="mb-1">
+                <span className="text-4xl font-extrabold text-white font-display">
+                  {currency === "INR" ? "₹999" : "$12"}
+                </span>
+                <span className="text-sm text-white/60 ml-1">/month</span>
+              </div>
+              <p className="text-sm text-white/60 mb-1">Everything you need to dominate search</p>
+              <div className="flex items-center gap-1.5 mb-6 text-xs font-semibold text-yellow-300">
+                <Zap className="w-3 h-3" /> 100 credits / month
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
                 {[
-                  "Unlimited analyses",
-                  "Full AI content optimization",
-                  "Bulk URL analysis",
-                  "Export in multiple formats",
-                  "Priority processing",
-                  "API access",
+                  "100 monthly credits",
+                  "Full SEO, AEO, GEO analysis",
+                  "Fix Everything (AI rewrite)",
+                  "File upload (.txt, .pdf, .docx)",
+                  "Faster processing",
+                  "Priority support",
                 ].map(item => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-white/90">
                     <Check className="w-4 h-4 text-yellow-300 flex-shrink-0 mt-0.5" />
@@ -1111,7 +1292,45 @@ export default function Home() {
                 Start Pro Trial
               </a>
             </div>
+
+            {/* Premium */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm flex flex-col">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Premium</p>
+              <div className="mb-1">
+                <span className="text-4xl font-extrabold text-gray-900 font-display">
+                  {currency === "INR" ? "₹2,999" : "$39"}
+                </span>
+                <span className="text-sm text-gray-400 ml-1">/month</span>
+              </div>
+              <p className="text-sm text-gray-500 mb-1">For power users and agencies</p>
+              <div className="flex items-center gap-1.5 mb-6 text-xs font-semibold text-[#4d44e3]">
+                <Zap className="w-3 h-3" /> 300 credits / month
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {[
+                  "300 monthly credits",
+                  "Priority processing",
+                  "Advanced insights",
+                  "Export features",
+                  "Future API access",
+                  "Dedicated support",
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-gray-700">
+                    <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <a href="#analyzer"
+                className="block text-center px-6 py-3 bg-[#4d44e3]/8 hover:bg-[#4d44e3]/15 text-[#4d44e3] border border-[#4d44e3]/20 rounded-xl font-bold text-sm transition-colors">
+                Get Premium
+              </a>
+            </div>
           </div>
+
+          <p className="mt-6 text-center text-xs text-gray-400">
+            * Prices may vary based on your region. Credits reset monthly.
+          </p>
         </div>
       </section>
 

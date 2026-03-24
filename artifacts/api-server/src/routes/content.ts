@@ -12,6 +12,26 @@ import {
 
 const router: IRouter = Router();
 
+/* ── Credit system ── */
+const FREE_CREDITS = 5;
+const creditStore = new Map<string, number>();
+
+function getIp(req: Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  const ip = Array.isArray(forwarded) ? forwarded[0] : (forwarded?.split(",")[0] ?? req.ip ?? "unknown");
+  return ip.trim();
+}
+
+function getCredits(ip: string): number {
+  if (!creditStore.has(ip)) creditStore.set(ip, FREE_CREDITS);
+  return creditStore.get(ip)!;
+}
+
+function deductCredits(ip: string, amount: number): void {
+  const current = getCredits(ip);
+  creditStore.set(ip, Math.max(0, current - amount));
+}
+
 /* ── Multer — memory storage, 10 MB limit ── */
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -203,9 +223,23 @@ ${content}`;
 }
 
 /* ══════════════════════════════════════
+   GET /credits  — returns remaining credits
+══════════════════════════════════════ */
+router.get("/credits", (req, res) => {
+  const ip = getIp(req);
+  res.json({ creditsRemaining: getCredits(ip), creditsTotal: FREE_CREDITS });
+});
+
+/* ══════════════════════════════════════
    POST /analyze  (text / URL)
 ══════════════════════════════════════ */
 router.post("/analyze", async (req, res) => {
+  const ip = getIp(req);
+  if (getCredits(ip) < 1) {
+    res.status(429).json({ error: "Credit limit reached", creditsRemaining: 0, creditsTotal: FREE_CREDITS });
+    return;
+  }
+
   const parseResult = AnalyzeContentBody.safeParse(req.body);
   if (!parseResult.success) {
     res.status(400).json({ error: "Invalid request body" });
@@ -233,7 +267,9 @@ router.post("/analyze", async (req, res) => {
   }
 
   try {
-    res.json(await runAnalysis(content));
+    const analysis = await runAnalysis(content);
+    deductCredits(ip, 1);
+    res.json({ ...analysis, creditsRemaining: getCredits(ip), creditsTotal: FREE_CREDITS });
   } catch (err) {
     req.log.error({ err }, "Failed to analyze content");
     res.status(500).json({ error: "Failed to analyze content. Please try again." });
@@ -262,6 +298,12 @@ const uploadMiddleware = (req: Request, res: Response, next: NextFunction) => {
 };
 
 router.post("/analyze-file", uploadMiddleware, async (req, res) => {
+  const ip = getIp(req);
+  if (getCredits(ip) < 1) {
+    res.status(429).json({ error: "Credit limit reached", creditsRemaining: 0, creditsTotal: FREE_CREDITS });
+    return;
+  }
+
   const file = (req as any).file as Express.Multer.File | undefined;
 
   if (!file) {
@@ -284,7 +326,8 @@ router.post("/analyze-file", uploadMiddleware, async (req, res) => {
 
   try {
     const analysis = await runAnalysis(extractedContent);
-    res.json({ ...analysis, extractedContent });
+    deductCredits(ip, 1);
+    res.json({ ...analysis, extractedContent, creditsRemaining: getCredits(ip), creditsTotal: FREE_CREDITS });
   } catch (err) {
     req.log.error({ err }, "Failed to analyze file");
     res.status(500).json({ error: "Failed to analyze the file. Please try again." });
@@ -295,6 +338,12 @@ router.post("/analyze-file", uploadMiddleware, async (req, res) => {
    POST /optimize  (text / URL)
 ══════════════════════════════════════ */
 router.post("/optimize", async (req, res) => {
+  const ip = getIp(req);
+  if (getCredits(ip) < 2) {
+    res.status(429).json({ error: "Credit limit reached. Optimization costs 2 credits.", creditsRemaining: getCredits(ip), creditsTotal: FREE_CREDITS });
+    return;
+  }
+
   const parseResult = OptimizeContentBody.safeParse(req.body);
   if (!parseResult.success) {
     res.status(400).json({ error: "Invalid request body" });
@@ -378,6 +427,7 @@ ${content}`;
     const rawOutput = (response.choices[0]?.message?.content ?? "{}").replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     const optimized = JSON.parse(rawOutput);
 
+    deductCredits(ip, 2);
     res.json({
       title: String(optimized.title ?? ""),
       metaDescription: String(optimized.metaDescription ?? ""),
