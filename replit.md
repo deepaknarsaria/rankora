@@ -20,11 +20,27 @@ pnpm workspace monorepo using TypeScript. **RankPilot AI** — an AI-powered con
 
 ## Application
 
-**RankPilot AI** allows users to:
-1. Paste content into a textarea
-2. Click "Analyze Content" → get SEO, AEO, GEO scores (0-100), issues list, and suggestions
-3. Click "Fix Everything" → get AI-optimized content
-4. Copy the optimized content to clipboard
+**RankPilot AI** is a full SaaS with two separate routes:
+
+### Route: `/` (Homepage / Marketing)
+- Hero, keyword input, content/URL textarea, file upload, CTA ("Get My SEO Score")
+- Marketing sections: trust, features, how-it-works, pricing, footer
+- On "Get My SEO Score": saves `{ type, content, keywords, result? }` to `localStorage["rankpilot_analysis_input"]` and navigates to `/dashboard`
+- For file uploads: calls `/api/analyze-file` first, then saves precomputed result to localStorage and navigates
+
+### Route: `/dashboard` (Analysis Dashboard)
+- On mount reads localStorage; if empty redirects to `/`
+- If `type === "pending"`: calls `/api/analyze` → shows results
+- If `type === "precomputed"`: displays pre-computed result immediately
+- Sticky top bar: logo + breadcrumb + credits badge + "New Analysis" button
+- Sidebar nav: Overview / Keywords / Issues / Opportunities / Optimize
+- Score cards with animated count-up numbers (0 → actual score)
+- Keyword Intelligence panel: detected keywords, keyword scores with bars, recommended keywords (Difficulty/Potential badges), add custom keyword
+- Issues section: red cards with priority badges
+- Opportunities section: amber cards with examples
+- Optimize section: "Fix Everything Automatically" CTA → calls `/api/optimize` → shows optimized content output
+- Before/After score comparison banner after optimization
+- Copy / Download optimized content actions
 
 ## Structure
 

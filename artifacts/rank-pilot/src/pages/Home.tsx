@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -32,10 +33,7 @@ import {
   Upload,
   Paperclip,
 } from "lucide-react";
-import { useAnalyzeContent, useOptimizeContent } from "@workspace/api-client-react";
-import type { ContentSection, FaqItem, Issue, Opportunity, KeywordAnalysisItem, DetectedKeywords } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { ScoreRing } from "@/components/ScoreRing";
 
 /* ── Loading step messages ── */
 const ANALYZE_STEPS = [
@@ -185,27 +183,17 @@ function isUrl(input: string): boolean {
 ══════════════════════════════════════ */
 export default function Home() {
   const [content, setContent] = useState("");
-  const [hasAnalyzed, setHasAnalyzed] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
-  const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [fileAnalysisError, setFileAnalysisError] = useState<string | null>(null);
+  const [isFileAnalyzing, setIsFileAnalyzing] = useState(false);
+  const [, navigate] = useLocation();
 
   /* ── File upload state ── */
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [isFileAnalyzing, setIsFileAnalyzing] = useState(false);
-  const [fileAnalysisError, setFileAnalysisError] = useState<string | null>(null);
-  const [fileAnalysisData, setFileAnalysisData] = useState<{
-    seoScore: number; aeoScore: number; geoScore: number; aiVisibilityScore: number;
-    detectedKeywords?: DetectedKeywords; keywordAnalysis?: KeywordAnalysisItem[]; suggestedKeywords?: string[];
-    issues: Issue[]; opportunities: Opportunity[];
-  } | null>(null);
 
   /* ── Keyword state ── */
   const [targetKeywords, setTargetKeywords] = useState("");
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
-  const [customKeyword, setCustomKeyword] = useState("");
 
   /* ── Credits & currency ── */
   const [credits, setCredits] = useState<{ remaining: number; total: number }>({ remaining: 5, total: 5 });
@@ -232,109 +220,9 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  const analyzeMutation = useAnalyzeContent({
-    mutation: {
-      onSuccess: (data: any) => {
-        setHasAnalyzed(true);
-        setAnalyzeError(null);
-        if (typeof data?.creditsRemaining === "number") {
-          setCredits({ remaining: data.creditsRemaining, total: data.creditsTotal ?? 5 });
-        }
-        toast({ title: "Analysis complete!", description: "Your content has been fully scored." });
-      },
-      onError: (err: any) => {
-        const msg = err?.response?.data?.error || err?.message || "An error occurred during analysis.";
-        if (err?.response?.data?.creditsRemaining === 0) {
-          setCredits({ remaining: 0, total: err?.response?.data?.creditsTotal ?? 5 });
-        }
-        setAnalyzeError(msg);
-      },
-    },
-  });
-
-  const optimizeMutation = useOptimizeContent({
-    mutation: {
-      onSuccess: () => setOptimizeError(null),
-      onError: (err: any) => {
-        const msg = err?.response?.data?.error || err?.message || "An error occurred during optimization.";
-        if (err?.response?.data?.creditsRemaining !== undefined) {
-          setCredits({ remaining: err?.response?.data?.creditsRemaining, total: err?.response?.data?.creditsTotal ?? 5 });
-        }
-        setOptimizeError(msg);
-      },
-    },
-  });
-
-  const handleAnalyze = () => {
-    if (!content.trim()) return;
-    optimizeMutation.reset();
-    setAnalyzeError(null);
-    setOptimizeError(null);
-    setSelectedKeywords([]);
-    analyzeMutation.mutate({ data: { content, keywords: targetKeywords.trim() || undefined } });
-  };
-
-  const handleOptimize = (kw?: string) => {
-    if (!content.trim()) return;
-    setOptimizeError(null);
-    const kwStr = kw ?? (selectedKeywords.length > 0 ? selectedKeywords.join(", ") : targetKeywords.trim() || undefined);
-    optimizeMutation.mutate({ data: { content, keywords: kwStr || undefined } });
-  };
-
-  const handleCopy = () => {
-    const raw = optimizeMutation.data?.rawContent ?? "";
-    navigator.clipboard.writeText(raw);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "Copied!", description: "Optimized content copied to clipboard." });
-  };
-
-  const handleDownload = () => {
-    const data = optimizeMutation.data;
-    if (!data) return;
-    const blob = new Blob([data.rawContent], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
-    a.href = url;
-    a.download = `${slug || "optimized-content"}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "Downloaded!", description: "Your optimized content has been saved as a .txt file." });
-  };
-
-  const handleReanalyze = () => {
-    const raw = optimizeMutation.data?.rawContent ?? "";
-    setContent(raw);
-    setHasAnalyzed(false);
-    setSelectedKeywords([]);
-    optimizeMutation.reset();
-    setTimeout(() => analyzeMutation.mutate({ data: { content: raw, keywords: targetKeywords.trim() || undefined } }), 100);
-  };
-
-  const handleStartOver = () => {
-    setContent("");
-    setHasAnalyzed(false);
-    setUploadedFile(null);
-    setFileAnalysisData(null);
-    setFileAnalysisError(null);
-    setTargetKeywords("");
-    setSelectedKeywords([]);
-    setCustomKeyword("");
-    analyzeMutation.reset();
-    optimizeMutation.reset();
-  };
-
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
-    if (hasAnalyzed) {
-      setHasAnalyzed(false);
-      analyzeMutation.reset();
-      setFileAnalysisData(null);
-    }
-    if (uploadedFile) {
-      setUploadedFile(null);
-    }
+    if (uploadedFile) setUploadedFile(null);
   };
 
   /* ── File upload handlers ── */
@@ -343,81 +231,55 @@ export default function Home() {
     if (!file) return;
     setUploadedFile(file);
     setContent("");
-    setHasAnalyzed(false);
-    setFileAnalysisData(null);
     setFileAnalysisError(null);
-    analyzeMutation.reset();
-    optimizeMutation.reset();
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleRemoveFile = () => {
     setUploadedFile(null);
-    setFileAnalysisData(null);
     setFileAnalysisError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  /* ── File analysis: call API here, then redirect with result ── */
   const handleAnalyzeFile = async (file: File) => {
     setIsFileAnalyzing(true);
     setFileAnalysisError(null);
-    setFileAnalysisData(null);
-    setAnalyzeError(null);
-    optimizeMutation.reset();
-
     try {
       const formData = new FormData();
       formData.append("file", file);
       if (targetKeywords.trim()) formData.append("keywords", targetKeywords.trim());
       const resp = await fetch("/api/analyze-file", { method: "POST", body: formData });
       const data = await resp.json();
-      if (!resp.ok) {
-        if (data.creditsRemaining !== undefined) {
-          setCredits({ remaining: data.creditsRemaining, total: data.creditsTotal ?? 5 });
-        }
-        throw new Error(data.error ?? "Failed to analyze file.");
-      }
-      if (typeof data.creditsRemaining === "number") {
-        setCredits({ remaining: data.creditsRemaining, total: data.creditsTotal ?? 5 });
-      }
-      setFileAnalysisData(data);
-      if (data.extractedContent) setContent(data.extractedContent);
-      setHasAnalyzed(true);
-      toast({ title: "Analysis complete!", description: "Your file has been fully scored." });
+      if (!resp.ok) throw new Error(data.error ?? "Failed to analyze file.");
+      localStorage.setItem("rankpilot_analysis_input", JSON.stringify({
+        type: "precomputed",
+        content: data.extractedContent ?? "",
+        keywords: targetKeywords.trim(),
+        result: data,
+      }));
+      navigate("/dashboard");
     } catch (err: any) {
       setFileAnalysisError(err.message ?? "An error occurred while analyzing the file.");
-    } finally {
       setIsFileAnalyzing(false);
     }
   };
 
-  /* Unified analyze entry point */
+  /* Unified analyze entry point: save to localStorage + redirect */
   const handleAnalyzeClick = () => {
     if (credits.remaining <= 0) return;
     if (uploadedFile) {
       handleAnalyzeFile(uploadedFile);
     } else {
-      handleAnalyze();
+      if (!content.trim()) return;
+      localStorage.setItem("rankpilot_analysis_input", JSON.stringify({
+        type: "pending",
+        content: content.trim(),
+        keywords: targetKeywords.trim(),
+      }));
+      navigate("/dashboard");
     }
   };
-
-  const toggleKeyword = (kw: string) => {
-    setSelectedKeywords(prev =>
-      prev.includes(kw) ? prev.filter(k => k !== kw) : [...prev, kw]
-    );
-  };
-
-  const addCustomKeyword = () => {
-    const kw = customKeyword.trim();
-    if (!kw) return;
-    if (!selectedKeywords.includes(kw)) setSelectedKeywords(prev => [...prev, kw]);
-    setCustomKeyword("");
-  };
-
-  const analysisData = fileAnalysisData ?? analyzeMutation.data ?? null;
-
-  const showOptimized = !!optimizeMutation.data;
-  const showResults = hasAnalyzed && analysisData && !showOptimized;
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">
@@ -501,24 +363,22 @@ export default function Home() {
         </motion.div>
 
         {/* Credits indicator */}
-        {!showOptimized && (
-          <div className="flex items-center justify-end mb-4">
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold border ${
-              credits.remaining === 0
-                ? "bg-red-50 border-red-200 text-red-700"
-                : credits.remaining <= 2
-                ? "bg-amber-50 border-amber-200 text-amber-700"
-                : "bg-emerald-50 border-emerald-200 text-emerald-700"
-            }`}>
-              <span className={`w-2 h-2 rounded-full ${credits.remaining === 0 ? "bg-red-500" : credits.remaining <= 2 ? "bg-amber-500 animate-pulse" : "bg-emerald-500"}`} />
-              Credits left: {credits.remaining} / {credits.total}
-            </div>
+        <div className="flex items-center justify-end mb-4">
+          <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold border ${
+            credits.remaining === 0
+              ? "bg-red-50 border-red-200 text-red-700"
+              : credits.remaining <= 2
+              ? "bg-amber-50 border-amber-200 text-amber-700"
+              : "bg-emerald-50 border-emerald-200 text-emerald-700"
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${credits.remaining === 0 ? "bg-red-500" : credits.remaining <= 2 ? "bg-amber-500 animate-pulse" : "bg-emerald-500"}`} />
+            Credits left: {credits.remaining} / {credits.total}
           </div>
-        )}
+        </div>
 
         {/* Out-of-credits banner */}
         <AnimatePresence>
-          {credits.remaining === 0 && !showOptimized && !showResults && (
+          {credits.remaining === 0 && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -540,13 +400,12 @@ export default function Home() {
         </AnimatePresence>
 
         {/* Input */}
-        {!showOptimized && (
-          <motion.div
-            initial={{ y: 16, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="mb-10"
-          >
+        <motion.div
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="mb-10"
+        >
             {/* File chip */}
             {uploadedFile && (
               <div className="mb-3 flex items-center gap-2.5 px-4 py-2.5 bg-[#4d44e3]/8 border border-[#4d44e3]/25 rounded-xl w-fit">
@@ -575,20 +434,6 @@ export default function Home() {
               />
               <p className="text-xs text-gray-400 mt-1.5 pl-1">We'll analyze and optimize your content for these keywords</p>
 
-              {/* Removable selected keyword chips */}
-              {selectedKeywords.length > 0 && (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold text-gray-500">Optimizing for:</span>
-                  {selectedKeywords.map(kw => (
-                    <span key={kw} className="flex items-center gap-1.5 px-3 py-1 bg-[#4d44e3]/10 border border-[#4d44e3]/25 text-[#4d44e3] text-xs font-semibold rounded-full">
-                      {kw}
-                      <button onClick={() => toggleKeyword(kw)} className="text-[#4d44e3]/60 hover:text-[#4d44e3] transition-colors">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-[#4d44e3]/30 focus-within:border-[#4d44e3]/50 transition-all">
@@ -633,18 +478,18 @@ export default function Home() {
                   </div>
                   <button
                     onClick={handleAnalyzeClick}
-                    disabled={(!content.trim() && !uploadedFile) || analyzeMutation.isPending || isFileAnalyzing || credits.remaining <= 0}
+                    disabled={(!content.trim() && !uploadedFile) || isFileAnalyzing || credits.remaining <= 0}
                     className="flex items-center gap-2 px-6 py-2.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
                   >
-                    {(analyzeMutation.isPending || isFileAnalyzing) ? (
+                    {isFileAnalyzing ? (
                       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, ease: "linear", duration: 1 }}>
                         <RefreshCw className="w-4 h-4" />
                       </motion.div>
                     ) : (
                       <Sparkles className="w-4 h-4" />
                     )}
-                    {analyzeMutation.isPending || isFileAnalyzing
-                      ? (uploadedFile ? "Processing file..." : inputIsUrl ? "Analyzing website..." : "Analyzing...")
+                    {isFileAnalyzing
+                      ? "Processing file..."
                       : credits.remaining <= 0
                       ? "No Credits Left"
                       : "Get My SEO Score"}
@@ -652,628 +497,29 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </motion.div>
-        )}
+        </motion.div>
 
         {/* Microcopy */}
-        {!showOptimized && !showResults && (
-          <p className="text-center text-sm text-gray-400 mt-3 mb-2">
-            Supports URL, text, PDF, DOCX &nbsp;·&nbsp; Results in 10–15 seconds &nbsp;·&nbsp; No signup required
-          </p>
-        )}
+        <p className="text-center text-sm text-gray-400 mt-3 mb-2">
+          Supports URL, text, PDF, DOCX &nbsp;·&nbsp; Results in 10–15 seconds &nbsp;·&nbsp; No signup required
+        </p>
 
-        {/* Loading */}
+        {/* File loading */}
         <AnimatePresence mode="wait">
           {isFileAnalyzing && <LoadingPanel key="file-loading" mode="file" isUrl={false} />}
-          {analyzeMutation.isPending && <LoadingPanel key="analyze-loading" mode="analyze" isUrl={inputIsUrl} />}
-          {optimizeMutation.isPending && <LoadingPanel key="optimize-loading" mode="optimize" isUrl={inputIsUrl} />}
         </AnimatePresence>
 
-        {/* Errors */}
+        {/* File error */}
         <AnimatePresence>
-          {(analyzeError || fileAnalysisError) && !analyzeMutation.isPending && !isFileAnalyzing && (
+          {fileAnalysisError && !isFileAnalyzing && (
             <ErrorCard
-              key="analyze-error"
-              message={analyzeError ?? fileAnalysisError ?? ""}
-              onRetry={() => { setAnalyzeError(null); setFileAnalysisError(null); handleAnalyzeClick(); }}
+              key="file-error"
+              message={fileAnalysisError}
+              onRetry={() => { setFileAnalysisError(null); if (uploadedFile) handleAnalyzeFile(uploadedFile); }}
             />
           )}
-          {optimizeError && !optimizeMutation.isPending && (
-            <ErrorCard key="optimize-error" message={optimizeError} onRetry={() => { setOptimizeError(null); handleOptimize(); }} />
-          )}
         </AnimatePresence>
 
-        {/* Analysis Results */}
-        <AnimatePresence>
-          {showResults && (
-            <motion.div
-              initial={{ opacity: 0, y: 32 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              className="space-y-8"
-            >
-              {/* Summary bar */}
-              <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm font-semibold text-emerald-800">Analysis Complete</span>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" />High</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" />Medium</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-400" />Low</span>
-                </div>
-              </div>
-
-              {/* Score Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <ScoreRing score={analysisData!.seoScore} label="SEO Score" colorClass="stroke-violet-500" glowColor="" icon={<Search className="w-4 h-4" />} description="Search engine ranking potential" />
-                <ScoreRing score={analysisData!.aeoScore} label="AEO Score" colorClass="stroke-blue-500" glowColor="" icon={<MessageCircleQuestion className="w-4 h-4" />} description="Answer engine readiness" />
-                <ScoreRing score={analysisData!.geoScore} label="GEO Score" colorClass="stroke-teal-500" glowColor="" icon={<Globe className="w-4 h-4" />} description="Generative engine optimization" />
-                <ScoreRing score={analysisData!.aiVisibilityScore} label="AI Visibility" colorClass="stroke-indigo-500" glowColor="" icon={<Eye className="w-4 h-4" />} description="Overall AI discovery score" />
-              </div>
-
-              {/* ── Keyword Intelligence Card ── */}
-              {analysisData && (analysisData.detectedKeywords || analysisData.suggestedKeywords?.length) && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white border border-gray-200 shadow-sm rounded-2xl overflow-hidden"
-                >
-                  {/* Card header */}
-                  <div className="flex items-center gap-3 px-7 pt-7 pb-5">
-                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#4d44e3]/10 border border-[#4d44e3]/20">
-                      <Tag className="w-4 h-4 text-[#4d44e3]" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 leading-none">Keyword Intelligence</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">Detected keywords · optimization scores · recommendations</p>
-                    </div>
-                  </div>
-
-                  <div className="px-7 pb-7 space-y-7">
-                    {/* Detected Keywords */}
-                    {analysisData.detectedKeywords && (
-                      <div>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Detected in Your Content</p>
-                        <div className="flex flex-wrap gap-2">
-                          {analysisData.detectedKeywords.primary && (
-                            <button
-                              onClick={() => toggleKeyword(analysisData.detectedKeywords!.primary)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                                selectedKeywords.includes(analysisData.detectedKeywords.primary)
-                                  ? "bg-[#4d44e3] text-white border-[#4d44e3]"
-                                  : "bg-[#4d44e3]/8 text-[#4d44e3] border-[#4d44e3]/30 hover:bg-[#4d44e3]/15"
-                              }`}
-                            >
-                              <TrendingUp className="w-3 h-3" />
-                              {analysisData.detectedKeywords.primary}
-                              {selectedKeywords.includes(analysisData.detectedKeywords.primary)
-                                ? <X className="w-3 h-3 opacity-70" />
-                                : <span className="opacity-60 font-normal">Primary</span>}
-                            </button>
-                          )}
-                          {(analysisData.detectedKeywords.secondary ?? []).map((kw, i) => (
-                            <button
-                              key={i}
-                              onClick={() => toggleKeyword(kw)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                                selectedKeywords.includes(kw)
-                                  ? "bg-[#4d44e3] text-white border-[#4d44e3]"
-                                  : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                              }`}
-                            >
-                              {kw}
-                              {selectedKeywords.includes(kw) && <X className="w-3 h-3 opacity-70" />}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Keyword Score Table — "keyword → X% optimized" */}
-                    {analysisData.keywordAnalysis && analysisData.keywordAnalysis.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                          {targetKeywords.trim() ? "Your Keyword Optimization Scores" : "Top Keyword Coverage"}
-                        </p>
-                        <div className="space-y-2.5">
-                          {analysisData.keywordAnalysis.map((item, i) => {
-                            const statusColor = item.status === "Good"
-                              ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                              : item.status === "Missing"
-                              ? "bg-red-100 text-red-700 border-red-200"
-                              : "bg-amber-100 text-amber-700 border-amber-200";
-                            const barColor = item.status === "Good" ? "bg-emerald-500" : item.status === "Missing" ? "bg-red-400" : "bg-amber-500";
-                            const scoreLabel = item.status === "Good" ? "optimized" : item.status === "Missing" ? "not found" : "needs work";
-                            return (
-                              <div key={i} className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3.5">
-                                <div className="flex items-center justify-between gap-3 mb-2">
-                                  <span className="text-sm text-gray-800 font-semibold min-w-0 truncate">{item.keyword}</span>
-                                  <div className="flex items-center gap-2 flex-shrink-0">
-                                    <span className="text-sm font-bold text-gray-700">{item.score}%</span>
-                                    <span className="text-xs text-gray-400">{scoreLabel}</span>
-                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${statusColor}`}>{item.status}</span>
-                                  </div>
-                                </div>
-                                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                                  <motion.div
-                                    className={`h-full rounded-full ${barColor}`}
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${item.score}%` }}
-                                    transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Recommended Keywords to Rank */}
-                    {analysisData.suggestedKeywords && analysisData.suggestedKeywords.length > 0 && (
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recommended Keywords to Rank</p>
-                          <span className="text-xs text-gray-400">Click to add → optimize</span>
-                        </div>
-                        <div className="space-y-2.5">
-                          {analysisData.suggestedKeywords.map((kw, i) => {
-                            const wordCount = kw.trim().split(/\s+/).length;
-                            const difficulty = wordCount >= 4 ? "Easy" : wordCount === 3 ? "Medium" : "Hard";
-                            const potential = i < 2 ? "High" : i < 4 ? "Medium" : "Low";
-                            const diffColor = difficulty === "Easy" ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                              : difficulty === "Medium" ? "bg-amber-100 text-amber-700 border-amber-200"
-                              : "bg-red-100 text-red-700 border-red-200";
-                            const potColor = potential === "High" ? "bg-violet-100 text-violet-700 border-violet-200"
-                              : potential === "Medium" ? "bg-blue-100 text-blue-700 border-blue-200"
-                              : "bg-gray-100 text-gray-600 border-gray-200";
-                            const isSelected = selectedKeywords.includes(kw);
-                            return (
-                              <div
-                                key={i}
-                                className={`flex items-center gap-3 rounded-xl px-4 py-3 border transition-all ${
-                                  isSelected
-                                    ? "bg-[#4d44e3]/6 border-[#4d44e3]/30"
-                                    : "bg-gray-50 border-gray-100 hover:border-gray-200"
-                                }`}
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-gray-800 truncate">{kw}</p>
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${diffColor}`}>
-                                    {difficulty}
-                                  </span>
-                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${potColor}`}>
-                                    {potential} potential
-                                  </span>
-                                  <button
-                                    onClick={() => toggleKeyword(kw)}
-                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                      isSelected
-                                        ? "bg-[#4d44e3] text-white"
-                                        : "bg-white border border-gray-200 text-gray-700 hover:border-[#4d44e3]/40 hover:text-[#4d44e3]"
-                                    }`}
-                                  >
-                                    {isSelected ? <><Check className="w-3 h-3" /> Added</> : <>+ Add</>}
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Custom keyword input */}
-                    <div className="pt-2 border-t border-gray-100 space-y-4">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={customKeyword}
-                          onChange={e => setCustomKeyword(e.target.value)}
-                          onKeyDown={e => e.key === "Enter" && addCustomKeyword()}
-                          placeholder="Add your own keyword..."
-                          className="flex-1 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4d44e3]/30 focus:border-[#4d44e3]/50 transition-all"
-                        />
-                        <button
-                          onClick={addCustomKeyword}
-                          disabled={!customKeyword.trim()}
-                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg border border-gray-200 transition-colors disabled:opacity-50"
-                        >
-                          Add
-                        </button>
-                      </div>
-
-                      {/* Optimize for selected CTA */}
-                      {selectedKeywords.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-[#4d44e3]/5 border border-[#4d44e3]/20 rounded-xl p-4 space-y-3"
-                        >
-                          <div>
-                            <p className="text-xs font-semibold text-[#4d44e3] mb-2 flex items-center gap-1.5">
-                              <Check className="w-3.5 h-3.5" /> Optimizing for {selectedKeywords.length} keyword{selectedKeywords.length > 1 ? "s" : ""}:
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {selectedKeywords.map(kw => (
-                                <span key={kw} className="flex items-center gap-1 px-2.5 py-1 bg-white border border-[#4d44e3]/20 text-[#4d44e3] text-xs font-semibold rounded-full">
-                                  {kw}
-                                  <button onClick={() => toggleKeyword(kw)} className="opacity-50 hover:opacity-100 transition-opacity">
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleOptimize(selectedKeywords.join(", "))}
-                            disabled={optimizeMutation.isPending}
-                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-sm shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60"
-                          >
-                            {optimizeMutation.isPending
-                              ? <>
-                                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, ease: "linear", duration: 1 }}>
-                                    <RefreshCw className="w-4 h-4" />
-                                  </motion.div>
-                                  Optimizing content for selected keywords...
-                                </>
-                              : <><Zap className="w-4 h-4 text-yellow-300" /> Optimize for Selected Keywords</>
-                            }
-                          </button>
-                        </motion.div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Issues */}
-              <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-7">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-red-50 border border-red-200">
-                    <AlertTriangle className="w-4 h-4 text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 leading-none">Issues Found</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Problems that need your attention</p>
-                  </div>
-                  <span className="ml-auto flex items-center justify-center min-w-[1.75rem] h-6 px-2 rounded-full bg-red-50 text-red-600 text-xs font-bold border border-red-200">
-                    {(analysisData!.issues ?? []).length}
-                  </span>
-                </div>
-
-                {(analysisData!.issues ?? []).length > 0 ? (
-                  <div className="space-y-3">
-                    {(analysisData!.issues ?? []).map((issue: Issue, i: number) => {
-                      const priorityBadge: Record<string, string> = {
-                        High:   "bg-red-100 text-red-700 border-red-200",
-                        Medium: "bg-amber-100 text-amber-700 border-amber-200",
-                        Low:    "bg-gray-100 text-gray-600 border-gray-200",
-                      };
-                      const dotColor: Record<string, string> = {
-                        High: "bg-red-500", Medium: "bg-amber-500", Low: "bg-gray-400",
-                      };
-                      return (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: -12 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.07 }}
-                          className="bg-red-50 border border-red-100 rounded-xl p-4 hover:border-red-200 transition-colors"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${dotColor[issue.priority] ?? dotColor.Medium}`} />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <h4 className="font-semibold text-gray-900 text-sm">{issue.title}</h4>
-                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${priorityBadge[issue.priority] ?? priorityBadge.Medium}`}>
-                                  {issue.priority}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-600 leading-relaxed">{issue.description}</p>
-                            </div>
-                          </div>
-                          <div className="mt-3 ml-5 flex items-start gap-2 bg-white rounded-lg px-3 py-2 border border-red-100">
-                            <ArrowRight className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#4d44e3]" />
-                            <span className="text-xs text-gray-600">
-                              <span className="text-[#4d44e3] font-semibold">Impact: </span>{issue.impact}
-                            </span>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 text-emerald-700 bg-emerald-50 p-5 rounded-xl border border-emerald-200">
-                    <CheckCircle2 className="w-6 h-6 flex-shrink-0" />
-                    <p className="font-medium">No issues found! Your content is in great shape.</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Opportunities */}
-              <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-7">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-amber-50 border border-amber-200">
-                    <Lightbulb className="w-4 h-4 text-amber-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 leading-none">Opportunities</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Actionable wins to boost your scores</p>
-                  </div>
-                  <span className="ml-auto flex items-center justify-center min-w-[1.75rem] h-6 px-2 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                    {(analysisData!.opportunities ?? []).length}
-                  </span>
-                </div>
-
-                {(analysisData!.opportunities ?? []).length > 0 ? (
-                  <div className="space-y-4">
-                    {(analysisData!.opportunities ?? []).map((opp: Opportunity, i: number) => {
-                      const priorityBadge: Record<string, string> = {
-                        High:   "bg-violet-100 text-violet-700 border-violet-200",
-                        Medium: "bg-blue-100 text-blue-700 border-blue-200",
-                        Low:    "bg-gray-100 text-gray-600 border-gray-200",
-                      };
-                      return (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: 12 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.07 }}
-                          className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-colors"
-                        >
-                          <div className="flex items-center gap-2 flex-wrap mb-2">
-                            <h4 className="font-semibold text-gray-900 text-sm">{opp.title}</h4>
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${priorityBadge[opp.priority] ?? priorityBadge.Medium}`}>
-                              {opp.priority}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 leading-relaxed mb-3">{opp.description}</p>
-                          {opp.example && (
-                            <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3 mb-3">
-                              <p className="text-xs text-purple-600 font-semibold uppercase tracking-wide mb-1">Example</p>
-                              <p className="text-sm text-gray-700 leading-relaxed">{opp.example}</p>
-                            </div>
-                          )}
-                          <div className="flex items-start gap-2 text-xs text-gray-500">
-                            <Bot className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-teal-600" />
-                            <span><span className="text-teal-700 font-semibold">Expected impact: </span>{opp.impact}</span>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-5 rounded-xl border border-gray-200">
-                    <p className="italic">No further opportunities. Your content looks fully optimized.</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Fix Everything CTA */}
-              <div className="flex flex-col items-center gap-3 pb-4">
-                {(selectedKeywords.length > 0 || targetKeywords.trim()) && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 bg-[#4d44e3]/6 border border-[#4d44e3]/20 rounded-xl px-4 py-2">
-                    <Zap className="w-3.5 h-3.5 text-[#4d44e3]" />
-                    <span>Optimizing for: <span className="font-semibold text-[#4d44e3]">{selectedKeywords.length > 0 ? selectedKeywords.join(", ") : targetKeywords.trim()}</span></span>
-                  </div>
-                )}
-                <button
-                  onClick={() => handleOptimize()}
-                  disabled={optimizeMutation.isPending}
-                  className="flex items-center gap-3 px-10 py-4 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-lg shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  {optimizeMutation.isPending ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, ease: "linear", duration: 1 }}>
-                      <RefreshCw className="w-5 h-5" />
-                    </motion.div>
-                  ) : (
-                    <Zap className="w-5 h-5 text-yellow-300" />
-                  )}
-                  {optimizeMutation.isPending
-                    ? (inputIsUrl ? "Fetching & optimizing..." : "Optimizing Content...")
-                    : "Fix Everything Automatically"}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Optimized Content Display */}
-        <AnimatePresence>
-          {showOptimized && optimizeMutation.data && (
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              className="space-y-5"
-            >
-              {/* Toolbar */}
-              <div className="bg-white border border-gray-200 shadow-sm rounded-2xl px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#4d44e3]/10 border border-[#4d44e3]/20">
-                    <Sparkles className="w-4 h-4 text-[#4d44e3]" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">Optimized Content Ready</p>
-                    <p className="text-xs text-gray-500">
-                      {selectedKeywords.length > 0
-                        ? `Optimized for: ${selectedKeywords.join(", ")}`
-                        : targetKeywords.trim()
-                        ? `Optimized for: ${targetKeywords.trim()}`
-                        : "SEO · AEO · GEO optimized — ready to publish"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button onClick={handleCopy}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#4d44e3]/10 hover:bg-[#4d44e3]/15 text-[#4d44e3] text-sm font-semibold transition-colors border border-[#4d44e3]/20">
-                    {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                    {copied ? "Copied!" : "Copy"}
-                  </button>
-                  <button onClick={handleDownload}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-semibold transition-colors border border-teal-200">
-                    <Download className="w-4 h-4" /> Download .txt
-                  </button>
-                  <button onClick={handleReanalyze}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold transition-colors border border-gray-200">
-                    <RefreshCw className="w-4 h-4" /> Re-analyze
-                  </button>
-                  <button onClick={handleStartOver}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 text-sm font-semibold transition-colors border border-gray-200">
-                    Start Over
-                  </button>
-                </div>
-              </div>
-
-              {/* Document card */}
-              <div className="bg-white border border-gray-200 shadow-sm rounded-2xl overflow-hidden relative">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#4d44e3] via-blue-500 to-teal-500" />
-                <div className="p-8 md:p-12 space-y-10">
-                  {/* Title + Meta */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-xs font-bold text-[#4d44e3]/70 uppercase tracking-widest">
-                      <Tag className="w-3.5 h-3.5" /> Optimized Title
-                    </div>
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight">
-                      {optimizeMutation.data.title}
-                    </h1>
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4">
-                      <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-widest mb-2">
-                        <Search className="w-3.5 h-3.5" /> Meta Description
-                        <span className="ml-auto font-normal text-blue-400 normal-case tracking-normal">
-                          {optimizeMutation.data.metaDescription.length} / 160 chars
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 leading-relaxed">{optimizeMutation.data.metaDescription}</p>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-gray-100" />
-
-                  {/* Introduction */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                      <FileText className="w-3.5 h-3.5" /> Introduction
-                    </div>
-                    <p className="text-base md:text-lg text-gray-700 leading-relaxed">{optimizeMutation.data.introduction}</p>
-                  </div>
-
-                  <div className="border-t border-gray-100" />
-
-                  {/* Content Sections */}
-                  {optimizeMutation.data.sections.length > 0 && (
-                    <div className="space-y-8">
-                      {optimizeMutation.data.sections.map((section: ContentSection, i: number) => (
-                        <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="space-y-3">
-                          {section.level <= 2 ? (
-                            <h2 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
-                              <span className="w-1 h-6 rounded-full bg-[#4d44e3] flex-shrink-0" />
-                              {section.heading}
-                            </h2>
-                          ) : (
-                            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                              <ChevronRight className="w-4 h-4 text-[#4d44e3] flex-shrink-0" />
-                              {section.heading}
-                            </h3>
-                          )}
-                          {section.content && <p className="text-base text-gray-600 leading-relaxed pl-3">{section.content}</p>}
-                          {section.bullets.length > 0 && (
-                            <ul className="space-y-2 pl-3">
-                              {section.bullets.map((bullet: string, bi: number) => (
-                                <li key={bi} className="flex items-start gap-2.5 text-sm text-gray-600">
-                                  <span className="mt-2 w-1.5 h-1.5 rounded-full bg-[#4d44e3] flex-shrink-0" />
-                                  {bullet}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="border-t border-gray-100" />
-
-                  {/* FAQ */}
-                  {optimizeMutation.data.faq.length > 0 && (
-                    <div className="space-y-5">
-                      <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                        <HelpCircle className="w-3.5 h-3.5" /> Frequently Asked Questions
-                      </div>
-                      <div className="space-y-3">
-                        {optimizeMutation.data.faq.map((item: FaqItem, i: number) => (
-                          <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                            className="bg-gray-50 border border-gray-200 rounded-xl p-5">
-                            <p className="font-semibold text-gray-900 mb-2 flex items-start gap-2">
-                              <span className="text-[#4d44e3] font-black text-base leading-tight">Q</span>
-                              {item.question}
-                            </p>
-                            <p className="text-sm text-gray-600 leading-relaxed pl-5">{item.answer}</p>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Internal Links */}
-                  {optimizeMutation.data.internalLinks.length > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                        <Link2 className="w-3.5 h-3.5" /> Internal Linking Suggestions
-                      </div>
-                      <div className="bg-teal-50 border border-teal-200 rounded-xl p-5 space-y-2">
-                        {optimizeMutation.data.internalLinks.map((link: string, i: number) => (
-                          <div key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
-                            <Link2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-teal-600" />
-                            {link}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="border-t border-gray-100" />
-
-                  {/* Conclusion */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Conclusion
-                    </div>
-                    <p className="text-base md:text-lg text-gray-700 leading-relaxed">{optimizeMutation.data.conclusion}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom export bar */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pb-4">
-                <button onClick={handleCopy}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-3.5 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
-                  <AnimatePresence mode="wait">
-                    {copied ? (
-                      <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2.5">
-                        <CheckCircle2 className="w-5 h-5" /> Copied to Clipboard!
-                      </motion.span>
-                    ) : (
-                      <motion.span key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2.5">
-                        <Copy className="w-5 h-5" /> Copy Full Content
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </button>
-                <button onClick={handleDownload}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-3.5 bg-white hover:bg-gray-50 text-gray-800 rounded-xl font-bold text-base shadow-sm hover:shadow-md border border-gray-200 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
-                  <Download className="w-5 h-5 text-teal-600" />
-                  Download as .txt
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </section>
 
       {/* ── TRUST / SOCIAL PROOF ── */}
