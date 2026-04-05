@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { PaymentSuccessBanner } from "@/components/PayPalPricingSection";
 import {
   Sparkles,
   RefreshCw,
@@ -183,7 +185,8 @@ function isUrl(input: string): boolean {
    MAIN PAGE
 ══════════════════════════════════════ */
 export default function Home() {
-  const { user, logout, authFetch } = useAuth();
+  const { user, logout, authFetch, refreshUser } = useAuth();
+  const [paymentResult, setPaymentResult] = useState<{ plan: string; credits: number } | null>(null);
   const [content, setContent] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [fileAnalysisError, setFileAnalysisError] = useState<string | null>(null);
@@ -283,8 +286,23 @@ export default function Home() {
     }
   };
 
+  const handlePaymentSuccess = useCallback(async (plan: "pro" | "premium", credits: number) => {
+    setPaymentResult({ plan, credits });
+    setCredits({ remaining: credits, total: credits });
+    await refreshUser();
+  }, [refreshUser]);
+
   return (
     <div className="min-h-screen bg-[#f8fafc]">
+
+      {/* ── PAYMENT SUCCESS BANNER ── */}
+      {paymentResult && (
+        <PaymentSuccessBanner
+          plan={paymentResult.plan}
+          credits={paymentResult.credits}
+          onDismiss={() => setPaymentResult(null)}
+        />
+      )}
 
       {/* ── STICKY HEADER ── */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
@@ -921,6 +939,7 @@ export default function Home() {
             </div>
           </div>
 
+          <PayPalScriptProvider options={{ clientId: "AXpxri0Crt0mUeUyRldDAoarmzRA02CfRUP5VqmctsQ_I5roPHcqGfQovMcUx0VbnOfBV2gL4REsM1Uc", vault: true, intent: "subscription" }}>
           <div className="grid md:grid-cols-3 gap-6">
             {/* Free */}
             <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm flex flex-col">
@@ -994,10 +1013,32 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <a href="#analyzer"
-                className="block text-center px-6 py-3 bg-white hover:bg-gray-100 text-[#4d44e3] rounded-xl font-bold text-sm transition-colors shadow-sm">
-                Start Pro Trial
-              </a>
+              {user?.plan === "pro" || user?.plan === "premium" ? (
+                <div className="flex items-center justify-center gap-2 px-4 py-3 bg-yellow-400/20 border border-yellow-400/40 rounded-xl text-yellow-200 text-sm font-semibold">
+                  <Check className="w-4 h-4" /> {user.plan === "pro" ? "Current Plan" : "Subscribed"}
+                </div>
+              ) : user ? (
+                <PayPalButtons
+                  style={{ layout: "vertical", color: "gold", shape: "rect", label: "subscribe", height: 44 }}
+                  createSubscription={(_data, actions) => actions.subscription.create({ plan_id: "P-375427898Y7862427NHJHTHY" })}
+                  onApprove={async (data) => {
+                    try {
+                      const res = await authFetch("/api/paypal-success", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ subscriptionID: data.subscriptionID, plan: "pro" }),
+                      });
+                      const result = await res.json();
+                      if (result.success) handlePaymentSuccess("pro", result.credits);
+                    } catch {}
+                  }}
+                />
+              ) : (
+                <a href={`${import.meta.env.BASE_URL}signup`}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-white hover:bg-gray-100 text-[#4d44e3] rounded-xl font-bold text-sm transition-colors shadow-sm">
+                  Sign in to Subscribe
+                </a>
+              )}
             </div>
 
             {/* Premium */}
@@ -1028,12 +1069,35 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <a href="#analyzer"
-                className="block text-center px-6 py-3 bg-[#4d44e3]/8 hover:bg-[#4d44e3]/15 text-[#4d44e3] border border-[#4d44e3]/20 rounded-xl font-bold text-sm transition-colors">
-                Get Premium
-              </a>
+              {user?.plan === "premium" ? (
+                <div className="flex items-center justify-center gap-2 px-4 py-3 bg-[#4d44e3]/8 border border-[#4d44e3]/20 rounded-xl text-[#4d44e3] text-sm font-semibold">
+                  <Check className="w-4 h-4" /> Current Plan
+                </div>
+              ) : user ? (
+                <PayPalButtons
+                  style={{ layout: "vertical", color: "blue", shape: "rect", label: "subscribe", height: 44 }}
+                  createSubscription={(_data, actions) => actions.subscription.create({ plan_id: "P-00B848669A0462238NHJHVXY" })}
+                  onApprove={async (data) => {
+                    try {
+                      const res = await authFetch("/api/paypal-success", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ subscriptionID: data.subscriptionID, plan: "premium" }),
+                      });
+                      const result = await res.json();
+                      if (result.success) handlePaymentSuccess("premium", result.credits);
+                    } catch {}
+                  }}
+                />
+              ) : (
+                <a href={`${import.meta.env.BASE_URL}signup`}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-[#4d44e3]/8 hover:bg-[#4d44e3]/15 text-[#4d44e3] border border-[#4d44e3]/20 rounded-xl font-bold text-sm transition-colors">
+                  Sign in to Subscribe
+                </a>
+              )}
             </div>
           </div>
+          </PayPalScriptProvider>
 
           <p className="mt-6 text-center text-xs text-gray-400">
             * Prices may vary based on your region. Credits reset monthly.

@@ -17,6 +17,7 @@ pnpm workspace monorepo using TypeScript. **Rankora AI** — an AI-powered conte
 - **Build**: esbuild (CJS bundle)
 - **AI**: Replit OpenAI AI Integration (gpt-5.2, no user API key needed)
 - **Frontend**: React + Vite + Tailwind CSS + Framer Motion
+- **Payments**: PayPal Subscriptions via `@paypal/react-paypal-js` (CLIENT_ID in frontend, POST /api/paypal-success updates plan+credits in DB)
 
 ## Application
 

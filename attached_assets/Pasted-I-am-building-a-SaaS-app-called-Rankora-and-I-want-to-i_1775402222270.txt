@@ -1,0 +1,105 @@
+I am building a SaaS app called Rankora and I want to integrate PayPal subscription payments.
+
+Use the following details:
+
+CLIENT_ID: AXpxri0Crt0mUeUyRldDAoarmzRA02CfRUP5VqmctsQ_I5roPHcqGfQovMcUx0VbnOfBV2gL4REsM1Uc
+
+PRO PLAN ID: P-375427898Y7862427NHJHTHY
+PREMIUM PLAN ID: P-00B848669A0462238NHJHVXY
+
+Build a complete working system with frontend + backend.
+
+-----------------------------------
+
+FRONTEND REQUIREMENTS:
+
+1. Load PayPal SDK ONLY ONCE using CLIENT_ID:
+https://www.paypal.com/sdk/js?client-id=CLIENT_ID&vault=true&intent=subscription
+
+2. Create a clean pricing UI with two sections:
+- Pro Plan ($12/month)
+- Premium Plan ($39/month)
+
+3. Add two PayPal buttons:
+- One for Pro
+- One for Premium
+
+4. Button logic:
+- Pro → use PRO PLAN ID
+- Premium → use PREMIUM PLAN ID
+
+5. On successful payment:
+- Capture subscriptionID
+- Send POST request to backend:
+  /api/paypal-success
+
+Payload:
+{
+  subscriptionID,
+  plan: "pro" or "premium"
+}
+
+6. Show success message:
+- "Subscription successful"
+- Display assigned credits
+
+-----------------------------------
+
+BACKEND REQUIREMENTS (Node.js + Express):
+
+1. Create Express server
+
+2. Create endpoint:
+POST /api/paypal-success
+
+3. Accept:
+- subscriptionID
+- plan
+
+4. Create simple user system (in-memory or JSON):
+
+User structure:
+{
+  id,
+  plan,
+  credits,
+  subscriptionID
+}
+
+5. Logic:
+- If plan = "pro" → assign 50 credits
+- If plan = "premium" → assign 150 credits
+
+6. Return response:
+{
+  success: true,
+  credits: number
+}
+
+-----------------------------------
+
+UI BEHAVIOR:
+
+- After payment → show success message
+- Display user's credits
+- Clean and simple UI (no complex styling needed)
+
+-----------------------------------
+
+IMPORTANT RULES:
+
+- Do NOT include PayPal Secret Key anywhere
+- Use ONLY CLIENT_ID in frontend
+- Load PayPal SDK only once (no duplicates)
+- Use fetch API for frontend-backend communication
+- Code should run directly in Replit
+
+-----------------------------------
+
+OUTPUT REQUIRED:
+
+- Full working code
+- File structure (index.html, server.js etc.)
+- Ready to run in Replit
+
+-----------------------------------
