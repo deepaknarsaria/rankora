@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { PayPalButtons } from "@paypal/react-paypal-js";
 import { PaymentSuccessBanner } from "@/components/PayPalPricingSection";
 import {
   Sparkles,
@@ -939,7 +939,6 @@ export default function Home() {
             </div>
           </div>
 
-          <PayPalScriptProvider options={{ clientId: "AXpxri0Crt0mUeUyRldDAoarmzRA02CfRUP5VqmctsQ_I5roPHcqGfQovMcUx0VbnOfBV2gL4REsM1Uc", vault: true, intent: "subscription" }}>
           <div className="grid md:grid-cols-3 gap-6">
             {/* Free */}
             <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm flex flex-col">
@@ -1097,7 +1096,6 @@ export default function Home() {
               )}
             </div>
           </div>
-          </PayPalScriptProvider>
 
           <p className="mt-6 text-center text-xs text-gray-400">
             * Prices may vary based on your region. Credits reset monthly.
