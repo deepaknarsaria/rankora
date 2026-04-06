@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { ExternalLink } from "lucide-react";
 
 /* ══════════════════════════════════════════════════════════
    PaypalButtons — Self-contained PayPal subscription widget.
 
-   Design decisions:
-   - SDK is injected once (singleton guard on sdkPromise).
-   - Buttons are rendered into a stable useRef div.
-   - onError from PayPal only logs — it does NOT set error
-     state because PayPal fires onError for non-fatal events
-     (e.g. secondary funding source load failures, popup
-     dismissals, etc.) while the primary button still works.
-   - Only a thrown render() call shows the error UI.
+   Iframe detection:
+   PayPal's checkout popup is blocked by browsers when launched
+   from inside a sandboxed iframe (e.g. Replit's preview pane).
+   If we detect we're inside an iframe we render a fallback link
+   that opens the page in a real browser tab so PayPal can work.
 ══════════════════════════════════════════════════════════ */
 
 declare global {
@@ -54,6 +52,15 @@ const PLAN_IDS: Record<"pro" | "premium", string> = {
   premium: "P-00B848669A0462238NHJHVXY",
 };
 
+/* ── Returns true when running inside any iframe ── */
+function isInsideIframe(): boolean {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true; // cross-origin parent — definitely an iframe
+  }
+}
+
 /* ── Singleton SDK loader ── */
 let sdkPromise: Promise<void> | null = null;
 
@@ -68,7 +75,10 @@ function loadPayPalSdk(): Promise<void> {
     if (existing) {
       if (window.paypal) { resolve(); return; }
       existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => { sdkPromise = null; reject(new Error("Script error")); });
+      existing.addEventListener("error", () => {
+        sdkPromise = null;
+        reject(new Error("Script error"));
+      });
       return;
     }
 
@@ -101,21 +111,26 @@ export default function PaypalButtons({
 }: PaypalButtonsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<ButtonInstance | null>(null);
-
-  /* "loading" → SDK not yet ready; "ready" → buttons rendered; "error" → render() threw */
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
+  /* Detect iframe once on mount */
+  const inIframe = isInsideIframe();
+
   useEffect(() => {
+    /* If inside an iframe, skip SDK loading entirely — PayPal can't work here */
+    if (inIframe) {
+      setStatus("ready"); // skip skeleton, show the fallback link below
+      return;
+    }
+
     let mounted = true;
 
     async function init() {
       try {
         await loadPayPalSdk();
         if (!mounted || !containerRef.current) return;
-
         if (!window.paypal) throw new Error("window.paypal missing after SDK load");
 
-        /* Tear down previous instance if props changed */
         if (instanceRef.current) {
           try { instanceRef.current.close(); } catch { /* ignore */ }
           instanceRef.current = null;
@@ -136,32 +151,19 @@ export default function PaypalButtons({
               onSuccess(data.subscriptionID);
             }
           },
-          onCancel: () => {
-            /* user closed PayPal popup — no action needed */
-          },
+          onCancel: () => { /* user closed popup — no action */ },
           onError: (err) => {
-            /*
-             * PayPal calls onError for many non-fatal reasons:
-             *   - a secondary funding source (Venmo, etc.) fails
-             *   - popup blocked by browser
-             *   - network hiccup during checkout
-             *
-             * We intentionally do NOT change the UI here.
-             * The primary PayPal button will still work for the user.
-             * Only log so we can debug if needed.
-             */
-            console.warn("[PaypalButtons] PayPal reported an error (non-fatal):", err);
+            /* Non-fatal: PayPal fires this for secondary funding-source errors.
+               The primary PayPal button still works. Log only. */
+            console.warn("[PaypalButtons] PayPal non-fatal error:", err);
           },
         });
 
         instanceRef.current = buttons;
-
-        /* render() is the only call that can actually fail to show buttons */
         await buttons.render(containerRef.current!);
-
         if (mounted) setStatus("ready");
       } catch (err) {
-        console.error("[PaypalButtons] Failed to render PayPal buttons:", err);
+        console.error("[PaypalButtons] render failed:", err);
         if (mounted) setStatus("error");
       }
     }
@@ -175,7 +177,23 @@ export default function PaypalButtons({
         instanceRef.current = null;
       }
     };
-  }, [plan, color]);
+  }, [plan, color, inIframe]);
+
+  /* ── Iframe fallback: redirect to standalone page ── */
+  if (inIframe) {
+    const href = `${window.location.origin}${window.location.pathname}#pricing`;
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#0070ba] hover:bg-[#005ea6] text-white rounded-xl font-semibold text-sm transition-colors"
+      >
+        <ExternalLink className="w-4 h-4" />
+        Open to Subscribe with PayPal
+      </a>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -184,7 +202,7 @@ export default function PaypalButtons({
         <div className="h-11 rounded-xl bg-gray-200/70 animate-pulse" />
       )}
 
-      {/* Only shown when render() itself threw — not when onError fires */}
+      {/* Only shown when render() itself threw */}
       {status === "error" && (
         <div className="text-center py-3 px-4 bg-red-50 border border-red-200 rounded-xl">
           <p className="text-xs text-red-600 font-medium">
@@ -193,11 +211,6 @@ export default function PaypalButtons({
         </div>
       )}
 
-      {/*
-        Container is hidden while loading, shown once render() resolves.
-        It is NEVER hidden by the error state — if render() throws we never
-        reach setStatus("ready") so the container stays hidden anyway.
-      */}
       <div
         ref={containerRef}
         style={{ display: status === "loading" ? "none" : "block" }}
