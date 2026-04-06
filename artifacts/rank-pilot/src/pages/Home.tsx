@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { PayPalButtons } from "@paypal/react-paypal-js";
+import PaypalButtons from "@/components/PaypalButtons";
 import { PaymentSuccessBanner } from "@/components/PayPalPricingSection";
 import {
   Sparkles,
@@ -1017,15 +1017,15 @@ export default function Home() {
                   <Check className="w-4 h-4" /> {user.plan === "pro" ? "Current Plan" : "Subscribed"}
                 </div>
               ) : user ? (
-                <PayPalButtons
-                  style={{ layout: "vertical", color: "gold", shape: "rect", label: "subscribe", height: 44 }}
-                  createSubscription={(_data, actions) => actions.subscription.create({ plan_id: "P-375427898Y7862427NHJHTHY" })}
-                  onApprove={async (data) => {
+                <PaypalButtons
+                  plan="pro"
+                  color="gold"
+                  onSuccess={async (subscriptionID) => {
                     try {
                       const res = await authFetch("/api/paypal-success", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ subscriptionID: data.subscriptionID, plan: "pro" }),
+                        body: JSON.stringify({ subscriptionID, plan: "pro" }),
                       });
                       const result = await res.json();
                       if (result.success) handlePaymentSuccess("pro", result.credits);
@@ -1073,15 +1073,15 @@ export default function Home() {
                   <Check className="w-4 h-4" /> Current Plan
                 </div>
               ) : user ? (
-                <PayPalButtons
-                  style={{ layout: "vertical", color: "blue", shape: "rect", label: "subscribe", height: 44 }}
-                  createSubscription={(_data, actions) => actions.subscription.create({ plan_id: "P-00B848669A0462238NHJHVXY" })}
-                  onApprove={async (data) => {
+                <PaypalButtons
+                  plan="premium"
+                  color="blue"
+                  onSuccess={async (subscriptionID) => {
                     try {
                       const res = await authFetch("/api/paypal-success", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ subscriptionID: data.subscriptionID, plan: "premium" }),
+                        body: JSON.stringify({ subscriptionID, plan: "premium" }),
                       });
                       const result = await res.json();
                       if (result.success) handlePaymentSuccess("premium", result.credits);
