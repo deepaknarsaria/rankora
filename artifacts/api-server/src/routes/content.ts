@@ -63,8 +63,18 @@ async function deductUserCredits(userId: number, amount: number): Promise<{ cred
   return updated ?? { credits: 0, plan: "free" };
 }
 
+const UNLIMITED = 999999;
+
+function isAdminUser(req: Request): boolean {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  return !!adminEmail && req.user?.email === adminEmail;
+}
+
 /* ── Unified credit check / deduct helpers ── */
 async function checkCredits(req: Request, needed: number): Promise<{ ok: boolean; remaining: number; total: number }> {
+  if (isAdminUser(req)) {
+    return { ok: true, remaining: UNLIMITED, total: UNLIMITED };
+  }
   if (req.user) {
     const info = await getUserCreditInfo(req.user.id);
     return { ok: info.credits >= needed, remaining: info.credits, total: getPlanTotal(info.plan) };
@@ -75,6 +85,9 @@ async function checkCredits(req: Request, needed: number): Promise<{ ok: boolean
 }
 
 async function spendCredits(req: Request, amount: number): Promise<{ remaining: number; total: number }> {
+  if (isAdminUser(req)) {
+    return { remaining: UNLIMITED, total: UNLIMITED };
+  }
   if (req.user) {
     const updated = await deductUserCredits(req.user.id, amount);
     return { remaining: updated.credits, total: getPlanTotal(updated.plan) };
@@ -434,8 +447,8 @@ router.post("/analyze-file", uploadMiddleware, async (req, res) => {
    POST /optimize  (text / URL)
 ══════════════════════════════════════ */
 router.post("/optimize", async (req, res) => {
-  // Block optimization for authenticated free-plan users
-  if (req.user) {
+  // Block optimization for authenticated free-plan users (admin bypasses this)
+  if (req.user && !isAdminUser(req)) {
     const info = await getUserCreditInfo(req.user.id);
     if (info.plan === "free") {
       res.status(403).json({ error: "Optimization is a Pro feature. Upgrade to Pro or Premium to unlock AI rewrites.", creditsRemaining: info.credits, creditsTotal: getPlanTotal("free") });
