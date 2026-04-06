@@ -1,25 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 
-/* ══════════════════════════════════════════════════════
-   PaypalButtons — loads the PayPal SDK once via a
-   <script> tag injected by useEffect (never a raw JSX
-   script tag), then renders subscription buttons using
-   window.paypal.Buttons(). Safe for React/Vite.
-══════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   PaypalButtons — Self-contained PayPal subscription widget.
 
+   How it works:
+   1. Injects the PayPal JS SDK <script> once (singleton guard).
+   2. After the script loads, calls window.paypal.Buttons().render()
+      pointed at a useRef div so React never touches PayPal's DOM.
+   3. Cleans up the button instance on unmount.
+   4. Does NOT call isEligible() — that check fails inside Replit's
+      iframe preview but buttons work fine in real browsers.
+══════════════════════════════════════════════════════════ */
+
+/* ── TypeScript ambient types for window.paypal ── */
 declare global {
   interface Window {
     paypal?: {
-      Buttons: (options: PayPalButtonOptions) => {
-        isEligible: () => boolean;
-        render: (container: HTMLElement) => Promise<void>;
-        close: () => void;
-      };
+      Buttons: (config: ButtonConfig) => ButtonInstance;
     };
   }
 }
 
-interface PayPalButtonOptions {
+interface ButtonConfig {
   style?: Record<string, unknown>;
   createSubscription: (data: unknown, actions: PayPalActions) => Promise<string>;
   onApprove: (data: { subscriptionID?: string }) => void;
@@ -28,72 +30,94 @@ interface PayPalButtonOptions {
 }
 
 interface PayPalActions {
-  subscription: {
-    create: (opts: { plan_id: string }) => Promise<string>;
-  };
+  subscription: { create: (opts: { plan_id: string }) => Promise<string> };
 }
 
-const CLIENT_ID = "AXpxri0Crt0mUeUyRldDAoarmzRA02CfRUP5VqmctsQ_I5roPHcqGfQovMcUx0VbnOfBV2gL4REsM1Uc";
-const SDK_URL = `https://www.paypal.com/sdk/js?client-id=${CLIENT_ID}&vault=true&intent=subscription`;
+interface ButtonInstance {
+  render: (el: HTMLElement) => Promise<void>;
+  close: () => void;
+}
 
-const PLAN_IDS = {
+/* ── Constants ── */
+const CLIENT_ID =
+  "AXpxri0Crt0mUeUyRldDAoarmzRA02CfRUP5VqmctsQ_I5roPHcqGfQovMcUx0VbnOfBV2gL4REsM1Uc";
+
+const SDK_URL =
+  `https://www.paypal.com/sdk/js` +
+  `?client-id=${CLIENT_ID}` +
+  `&vault=true` +
+  `&intent=subscription` +
+  `&components=buttons`;
+
+const PLAN_IDS: Record<"pro" | "premium", string> = {
   pro: "P-375427898Y7862427NHJHTHY",
   premium: "P-00B848669A0462238NHJHVXY",
-} as const;
+};
 
-/* Singleton promise so the script is only injected once */
-let sdkReady: Promise<void> | null = null;
+/* ── Singleton SDK loader (only one <script> ever injected) ── */
+let sdkPromise: Promise<void> | null = null;
 
-function loadSdk(): Promise<void> {
+function loadPayPalSdk(): Promise<void> {
   if (window.paypal) return Promise.resolve();
-  if (sdkReady) return sdkReady;
+  if (sdkPromise) return sdkPromise;
 
-  sdkReady = new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[src="${SDK_URL}"]`);
-    if (existing) {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => { sdkReady = null; reject(); });
+  sdkPromise = new Promise<void>((resolve, reject) => {
+    /* If the script tag was somehow already added, wait for it */
+    const already = document.querySelector<HTMLScriptElement>(
+      'script[data-paypal-sdk="rankora"]'
+    );
+    if (already) {
+      if (window.paypal) { resolve(); return; }
+      already.addEventListener("load", () => resolve());
+      already.addEventListener("error", () => { sdkPromise = null; reject(); });
       return;
     }
+
     const script = document.createElement("script");
     script.src = SDK_URL;
+    script.dataset.paypalSdk = "rankora";   /* marks it as ours */
     script.onload = () => resolve();
-    script.onerror = () => { sdkReady = null; reject(new Error("SDK load failed")); };
+    script.onerror = () => {
+      sdkPromise = null;
+      reject(new Error("PayPal SDK failed to load"));
+    };
     document.head.appendChild(script);
   });
 
-  return sdkReady;
+  return sdkPromise;
 }
 
 /* ── Props ── */
 export interface PaypalButtonsProps {
   plan: "pro" | "premium";
-  color?: "gold" | "blue";
+  color?: "gold" | "blue" | "silver" | "white" | "black";
   onSuccess: (subscriptionID: string) => void;
-  onError?: () => void;
 }
 
+/* ── Component ── */
 export default function PaypalButtons({
   plan,
   color = "gold",
   onSuccess,
-  onError,
 }: PaypalButtonsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const buttonsInstance = useRef<ReturnType<NonNullable<Window["paypal"]>["Buttons"]> | null>(null);
+  const instanceRef = useRef<ButtonInstance | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
-    let alive = true;
+    let mounted = true;
 
-    loadSdk()
-      .then(() => {
-        if (!alive || !containerRef.current || !window.paypal) return;
+    async function init() {
+      try {
+        await loadPayPalSdk();
 
-        /* Tear down any previously rendered instance */
-        if (buttonsInstance.current) {
-          try { buttonsInstance.current.close(); } catch { /* ignore */ }
-          buttonsInstance.current = null;
+        if (!mounted || !containerRef.current) return;
+        if (!window.paypal) throw new Error("window.paypal still undefined after load");
+
+        /* Tear down previous render if plan/color changed */
+        if (instanceRef.current) {
+          try { instanceRef.current.close(); } catch { /* ignore */ }
+          instanceRef.current = null;
         }
         containerRef.current.innerHTML = "";
 
@@ -102,59 +126,65 @@ export default function PaypalButtons({
             layout: "vertical",
             color,
             shape: "rect",
-            label: "subscribe",
             height: 44,
           },
           createSubscription: (_data, actions) =>
             actions.subscription.create({ plan_id: PLAN_IDS[plan] }),
           onApprove: (data) => {
-            if (alive && data.subscriptionID) onSuccess(data.subscriptionID);
-          },
-          onCancel: () => { /* user dismissed — no-op */ },
-          onError: () => {
-            if (alive) {
-              setStatus("error");
-              onError?.();
+            if (mounted && data.subscriptionID) {
+              onSuccess(data.subscriptionID);
             }
+          },
+          onCancel: () => { /* user dismissed PayPal popup — nothing to do */ },
+          onError: (err) => {
+            console.error("[PaypalButtons] PayPal error:", err);
+            if (mounted) setStatus("error");
           },
         });
 
-        if (!buttons.isEligible()) {
-          if (alive) setStatus("error");
-          return;
-        }
+        instanceRef.current = buttons;
 
-        buttonsInstance.current = buttons;
-        buttons
-          .render(containerRef.current!)
-          .then(() => { if (alive) setStatus("ready"); })
-          .catch(() => { if (alive) setStatus("error"); });
-      })
-      .catch(() => {
-        if (alive) setStatus("error");
-      });
+        await buttons.render(containerRef.current!);
+
+        if (mounted) setStatus("ready");
+      } catch (err) {
+        console.error("[PaypalButtons] init failed:", err);
+        if (mounted) setStatus("error");
+      }
+    }
+
+    init();
 
     return () => {
-      alive = false;
-      if (buttonsInstance.current) {
-        try { buttonsInstance.current.close(); } catch { /* ignore */ }
-        buttonsInstance.current = null;
+      mounted = false;
+      if (instanceRef.current) {
+        try { instanceRef.current.close(); } catch { /* ignore */ }
+        instanceRef.current = null;
       }
     };
-  }, [plan, color]); /* re-run only if plan or color changes */
+  }, [plan, color]);   /* re-run only when plan or color changes */
 
   return (
-    <div className="w-full min-h-[44px]">
+    <div className="w-full">
+      {/* Skeleton while SDK loads */}
       {status === "loading" && (
-        <div className="h-11 rounded-xl bg-gray-200 animate-pulse" />
+        <div className="h-11 rounded-xl bg-gray-200/70 animate-pulse" />
       )}
+
+      {/* Error fallback */}
       {status === "error" && (
-        <p className="text-xs text-red-500 text-center py-3">
-          PayPal unavailable — please refresh the page.
-        </p>
+        <div className="text-center py-3 px-4 bg-red-50 border border-red-200 rounded-xl">
+          <p className="text-xs text-red-600 font-medium">
+            PayPal could not load. Please refresh the page or try again later.
+          </p>
+        </div>
       )}
-      {/* PayPal renders its iframe into this div */}
-      <div ref={containerRef} className={status !== "ready" ? "hidden" : ""} />
+
+      {/* PayPal renders its button iframe into this div */}
+      <div
+        ref={containerRef}
+        style={{ display: status === "loading" ? "none" : "block" }}
+      />
     </div>
   );
 }

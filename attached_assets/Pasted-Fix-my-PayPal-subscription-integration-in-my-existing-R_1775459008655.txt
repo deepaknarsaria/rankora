@@ -1,0 +1,80 @@
+Fix my PayPal subscription integration in my existing React (Vite) project.
+
+Problem:
+- PayPal button shows "PayPal unavailable — please refresh the page"
+- SDK is not loading properly
+- Possible client ID mismatch or duplicate scripts
+
+-----------------------------------
+
+Use ONLY this CLIENT ID:
+AXpxri0Crt0mUeUyRldDAoarmzRA02CfRUP5VqmctsQ_I5roPHcqGfQovMcUx0VbnOfBV2gL4REsM1Uc
+
+Use these PLAN IDs:
+Pro Plan → P-375427898Y7862427NHJHTHY
+Premium Plan → P-00B848669A0462238NHJHVXY
+
+-----------------------------------
+
+FIX REQUIREMENTS:
+
+1. REMOVE all existing PayPal <script> tags from the project
+
+2. Create a React component:
+PaypalButtons.jsx
+
+3. Dynamically load PayPal SDK using useEffect:
+
+- Load ONLY once
+- Use this URL:
+
+https://www.paypal.com/sdk/js?client-id=AXpxri0Crt0mUeUyRldDAoarmzRA02CfRUP5VqmctsQ_I5roPHcqGfQovMcUx0VbnOfBV2gL4REsM1Uc&vault=true&intent=subscription
+
+4. Ensure safe loading:
+
+- Wait until script loads
+- Check if window.paypal exists
+- Prevent duplicate script injection
+
+5. Use useRef for button containers
+
+6. Render two buttons:
+
+- Pro button → uses plan_id: P-375427898Y7862427NHJHTHY
+- Premium button → uses plan_id: P-00B848669A0462238NHJHVXY
+
+7. On successful subscription:
+
+Send POST request:
+
+fetch('/api/paypal-success', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    subscriptionID: data.subscriptionID,
+    plan: 'pro' or 'premium'
+  })
+});
+
+8. Add loading state:
+- Show "Loading PayPal..." until SDK loads
+
+9. Add error handling:
+- If SDK fails → show "Payment unavailable"
+
+10. Clean integration:
+- No duplicate buttons
+- No direct DOM manipulation
+- Fully React-safe
+
+-----------------------------------
+
+OUTPUT REQUIRED:
+
+1. PaypalButtons.jsx (clean component)
+2. Example usage in pricing page
+3. No runtime errors
+4. Fully working PayPal subscription buttons
+5. Fix "PayPal unavailable" issue completely
+
+-----------------------------------
