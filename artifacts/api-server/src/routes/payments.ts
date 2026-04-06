@@ -14,7 +14,7 @@ const PaypalSuccessBody = z.object({
 
 const PLAN_CREDITS: Record<string, number> = {
   pro: 50,
-  premium: 150,
+  premium: 200,
 };
 
 /* ══════════════════════════════════════

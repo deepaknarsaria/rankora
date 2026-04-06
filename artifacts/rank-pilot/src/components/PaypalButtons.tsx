@@ -46,7 +46,7 @@ interface ButtonInstance {
 
 /* ── Constants ── */
 const CLIENT_ID =
-  "AXpxri0Crt0mUeUyRldDAoarmzRA02CfRUP5VqmctsQ_I5roPHcqGfQovMcUx0VbnOfBV2gL4REsM1Uc";
+  "Abq1k-mlr2sgykzRvWXWqvTqWK3e2rGbeZ7hLgLQCbFSseZDzCQkGMCJYCozMGUhOEiQf5f8wlUQSm1W";
 
 const SDK_URL =
   `https://www.paypal.com/sdk/js` +
@@ -56,8 +56,8 @@ const SDK_URL =
   `&components=buttons`;
 
 const PLAN_IDS: Record<"pro" | "premium", string> = {
-  pro: "P-2CX02696AA6399419NHJWIPA",
-  premium: "P-8ME89068SD671434GNHJWJLA",
+  pro: "P-375427898Y7862427NHJHTHY",
+  premium: "P-00B848669A0462238NHJHVXY",
 };
 
 /* ── Returns true when running inside any iframe ── */
@@ -73,21 +73,18 @@ function isInsideIframe(): boolean {
 let sdkPromise: Promise<void> | null = null;
 
 function loadPayPalSdk(): Promise<void> {
-  if (window.paypal) return Promise.resolve();
   if (sdkPromise) return sdkPromise;
 
   sdkPromise = new Promise<void>((resolve, reject) => {
+    /* Remove any old SDK script with a different URL (e.g. switching sandbox→live) */
     const existing = document.querySelector<HTMLScriptElement>(
       'script[data-paypal-sdk="rankora"]'
     );
     if (existing) {
-      if (window.paypal) { resolve(); return; }
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => {
-        sdkPromise = null;
-        reject(new Error("Script error"));
-      });
-      return;
+      if (existing.src === SDK_URL && window.paypal) { resolve(); return; }
+      /* URL changed — remove stale script and wipe the old paypal object */
+      existing.remove();
+      delete (window as { paypal?: unknown }).paypal;
     }
 
     const script = document.createElement("script");
