@@ -48,8 +48,8 @@ const SDK_URL =
   `&components=buttons`;
 
 const PLAN_IDS: Record<"pro" | "premium", string> = {
-  pro: "P-375427898Y7862427NHJHTHY",
-  premium: "P-00B848669A0462238NHJHVXY",
+  pro: "P-2CX02696AA6399419NHJWIPA",
+  premium: "P-8ME89068SD671434GNHJWJLA",
 };
 
 /* ── Returns true when running inside any iframe ── */
