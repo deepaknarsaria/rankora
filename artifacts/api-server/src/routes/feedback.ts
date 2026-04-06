@@ -47,6 +47,27 @@ router.post("/feedback", async (req, res) => {
 });
 
 /* ══════════════════════════════════════
+   GET /api/feedback/public
+   Public — returns all feedback (name, message, reply, status, date).
+   Email is intentionally excluded for privacy.
+══════════════════════════════════════ */
+router.get("/feedback/public", async (_req, res) => {
+  const rows = await db
+    .select({
+      id: feedbackTable.id,
+      name: feedbackTable.name,
+      message: feedbackTable.message,
+      reply: feedbackTable.reply,
+      status: feedbackTable.status,
+      createdAt: feedbackTable.createdAt,
+    })
+    .from(feedbackTable)
+    .orderBy(desc(feedbackTable.createdAt));
+
+  res.json(rows);
+});
+
+/* ══════════════════════════════════════
    GET /api/feedback
    Protected — requires auth (admin).
 ══════════════════════════════════════ */
