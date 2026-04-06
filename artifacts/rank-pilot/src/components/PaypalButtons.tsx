@@ -112,6 +112,7 @@ export default function PaypalButtons({
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<ButtonInstance | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   /* Detect iframe once on mount */
   const inIframe = isInsideIframe();
@@ -153,9 +154,12 @@ export default function PaypalButtons({
           },
           onCancel: () => { /* user closed popup — no action */ },
           onError: (err) => {
-            /* Non-fatal: PayPal fires this for secondary funding-source errors.
-               The primary PayPal button still works. Log only. */
-            console.warn("[PaypalButtons] PayPal non-fatal error:", err);
+            /* Fires when the checkout popup fails (invalid plan, sandbox mismatch, etc.) */
+            console.error("[PaypalButtons] PayPal checkout error:", err);
+            const msg = typeof err === "string"
+              ? err
+              : (err as { message?: string })?.message ?? JSON.stringify(err);
+            if (mounted) setCheckoutError(msg);
           },
         });
 
@@ -196,7 +200,7 @@ export default function PaypalButtons({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-2">
       {/* Loading skeleton */}
       {status === "loading" && (
         <div className="h-11 rounded-xl bg-gray-200/70 animate-pulse" />
@@ -207,6 +211,17 @@ export default function PaypalButtons({
         <div className="text-center py-3 px-4 bg-red-50 border border-red-200 rounded-xl">
           <p className="text-xs text-red-600 font-medium">
             PayPal could not load. Please refresh the page or try again later.
+          </p>
+        </div>
+      )}
+
+      {/* Checkout-level error: shown when popup closes with an error (bad plan ID, etc.) */}
+      {checkoutError && (
+        <div className="py-2 px-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-xs text-amber-700 font-semibold mb-1">PayPal checkout failed</p>
+          <p className="text-xs text-amber-600 break-all">{checkoutError}</p>
+          <p className="text-xs text-amber-500 mt-1">
+            Check that your Plan IDs are active in the correct PayPal environment (sandbox vs live).
           </p>
         </div>
       )}
