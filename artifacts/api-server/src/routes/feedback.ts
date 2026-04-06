@@ -4,7 +4,7 @@ import { feedbackTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import nodemailer from "nodemailer";
-import { requireAuth } from "../middlewares/auth.js";
+import { requireAdmin } from "../middlewares/auth.js";
 
 const router = Router();
 
@@ -50,7 +50,7 @@ router.post("/feedback", async (req, res) => {
    GET /api/feedback
    Protected — requires auth (admin).
 ══════════════════════════════════════ */
-router.get("/feedback", requireAuth, async (_req, res) => {
+router.get("/feedback", requireAdmin, async (_req, res) => {
   const rows = await db
     .select()
     .from(feedbackTable)
@@ -69,7 +69,7 @@ const ReplyBody = z.object({
   reply: z.string().min(1, "Reply cannot be empty"),
 });
 
-router.post("/feedback/reply", requireAuth, async (req, res) => {
+router.post("/feedback/reply", requireAdmin, async (req, res) => {
   const parse = ReplyBody.safeParse(req.body);
   if (!parse.success) {
     res.status(400).json({ error: parse.error.errors[0].message });

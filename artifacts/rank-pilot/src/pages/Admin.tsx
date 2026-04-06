@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { MessageSquare, Send, Loader2, ArrowLeft, RefreshCw, Inbox } from "lucide-react";
+import { MessageSquare, Send, Loader2, ArrowLeft, RefreshCw, Inbox, ShieldOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface FeedbackItem {
@@ -22,12 +22,14 @@ export default function Admin() {
   const [sending, setSending] = useState<number | null>(null);
   const [sent, setSent] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const fetchFeedback = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await authFetch("/api/feedback");
+      if (res.status === 403) { setAccessDenied(true); return; }
       if (!res.ok) { setError("Failed to load feedback."); return; }
       const data = await res.json();
       setItems(data);
@@ -68,6 +70,28 @@ export default function Admin() {
 
   const pending = items.filter(i => i.status === "pending");
   const replied = items.filter(i => i.status === "replied");
+
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4">
+        <div className="bg-white border border-red-200 rounded-2xl shadow-sm p-10 text-center max-w-md w-full">
+          <div className="flex justify-center mb-4">
+            <ShieldOff className="w-14 h-14 text-red-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-500 text-sm mb-6">
+            You don't have permission to view this page. Admin access is restricted.
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-6 py-2.5 bg-[#4d44e3] hover:bg-[#3d35c3] text-white rounded-xl font-semibold text-sm transition-colors"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">

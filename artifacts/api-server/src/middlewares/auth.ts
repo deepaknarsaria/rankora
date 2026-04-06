@@ -50,3 +50,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     next();
   });
 }
+
+export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  await requireAuth(req, res, () => {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail || req.user?.email !== adminEmail) {
+      res.status(403).json({ error: "Access denied. Admins only." });
+      return;
+    }
+    next();
+  });
+}
