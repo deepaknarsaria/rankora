@@ -5,6 +5,7 @@ import authRouter from "./auth";
 import paymentsRouter from "./payments";
 import webhookRouter from "./webhook";
 import feedbackRouter from "./feedback";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(contentRouter);
 router.use(paymentsRouter);
 router.use(webhookRouter);
 router.use(feedbackRouter);
+router.use(adminRouter);
 
 export default router;
