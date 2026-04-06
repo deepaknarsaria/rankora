@@ -27,6 +27,7 @@ interface UserItem {
 interface Stats {
   totalUsers: number;
   totalFeedback: number;
+  planBreakdown: { free: number; pro: number; premium: number };
 }
 
 type Tab = "overview" | "users" | "feedback";
@@ -223,7 +224,7 @@ export default function Admin() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* ── Always-visible Stats ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Users</p>
             {statsLoading
@@ -245,6 +246,23 @@ export default function Admin() {
               : <p className="text-3xl font-bold text-red-500">{pendingFeedback.length}</p>
             }
           </div>
+        </div>
+
+        {/* ── Plan Breakdown ── */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          {[
+            { label: "Free Plan", key: "free", color: "text-gray-600", bg: "bg-gray-100", border: "border-gray-200" },
+            { label: "Pro Plan", key: "pro", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" },
+            { label: "Premium Plan", key: "premium", color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-200" },
+          ].map(({ label, key, color, bg, border }) => (
+            <div key={key} className={`${bg} border ${border} rounded-2xl p-4 shadow-sm`}>
+              <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${color}`}>{label}</p>
+              {statsLoading
+                ? <div className="h-7 w-10 bg-white/60 animate-pulse rounded-lg mt-1" />
+                : <p className={`text-2xl font-bold ${color}`}>{stats?.planBreakdown?.[key] ?? 0}</p>
+              }
+            </div>
+          ))}
         </div>
 
         {/* ── Tabs ── */}

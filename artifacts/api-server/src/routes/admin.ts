@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db";
 import { feedbackTable } from "@workspace/db";
-import { eq, count } from "drizzle-orm";
+import { eq, count, sql } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/auth.js";
 
 const router = Router();
@@ -14,9 +14,21 @@ const router = Router();
 router.get("/admin/stats", requireAdmin, async (_req, res) => {
   const [userCount] = await db.select({ count: count() }).from(usersTable);
   const [feedbackCount] = await db.select({ count: count() }).from(feedbackTable);
+
+  const planRows = await db
+    .select({ plan: usersTable.plan, count: count() })
+    .from(usersTable)
+    .groupBy(usersTable.plan);
+
+  const planBreakdown: Record<string, number> = { free: 0, pro: 0, premium: 0 };
+  for (const row of planRows) {
+    planBreakdown[row.plan] = Number(row.count);
+  }
+
   res.json({
     totalUsers: Number(userCount.count),
     totalFeedback: Number(feedbackCount.count),
+    planBreakdown,
   });
 });
 

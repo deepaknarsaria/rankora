@@ -201,7 +201,7 @@ export default function Dashboard() {
   /* ── Read localStorage on mount ── */
   useEffect(() => {
     const raw = localStorage.getItem("rankpilot_analysis_input");
-    if (!raw) { navigate("/"); return; }
+    if (!raw) return;
     try {
       const parsed: StoredInput = JSON.parse(raw);
       setStoredInput(parsed);
@@ -216,9 +216,9 @@ export default function Dashboard() {
         setTimeout(() => setScoresEnabled(true), 200);
       }
     } catch {
-      navigate("/");
+      /* ignore malformed data */
     }
-  }, [navigate]);
+  }, []);
 
   /* ── Fetch initial credits (auth-aware) ── */
   useEffect(() => {
@@ -316,6 +316,18 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
     toast({ title: "Downloaded!" });
   };
+
+  /* ── Dashboard-level analyze (inline form) ── */
+  function handleDashboardAnalyze(e: React.FormEvent) {
+    e.preventDefault();
+    if (!content.trim()) return;
+    setAnalyzeError(null);
+    setAnalysisData(null);
+    setInitialScores(null);
+    setScoresEnabled(false);
+    localStorage.setItem("rankpilot_analysis_input", JSON.stringify({ type: "pending", content, keywords: targetKeywords }));
+    analyzeMutation.mutate({ data: { content, keywords: targetKeywords.trim() || undefined } });
+  }
 
   /* ── Scroll spy ── */
   useEffect(() => {
@@ -499,6 +511,54 @@ export default function Dashboard() {
                   Try again
                 </button>
               </div>
+            )}
+
+            {/* ── INLINE ANALYZE FORM (shown when no analysis yet) ── */}
+            {!analysisData && !isLoading && !analyzeError && (
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-0.5">Analyze content</h2>
+                  <p className="text-sm text-gray-500">Paste your content or enter a URL below to get your SEO scores.</p>
+                </div>
+                <form onSubmit={handleDashboardAnalyze} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
+                  {/* Target keywords */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                      <Target className="w-4 h-4 text-[#4d44e3]" />
+                      Target Keywords <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={targetKeywords}
+                      onChange={e => setTargetKeywords(e.target.value)}
+                      placeholder="e.g. SEO tools, content optimization, keyword research"
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#4d44e3] focus:ring-2 focus:ring-[#4d44e3]/10 transition-colors"
+                    />
+                  </div>
+                  {/* Content / URL */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                      <FileText className="w-4 h-4 text-[#4d44e3]" />
+                      Content or URL
+                    </label>
+                    <textarea
+                      rows={7}
+                      value={content}
+                      onChange={e => setContent(e.target.value)}
+                      placeholder="Paste your article, blog post, landing page text... or enter a website URL (https://...)"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#4d44e3] focus:ring-2 focus:ring-[#4d44e3]/10 resize-none transition-colors"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!content.trim()}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-[#4d44e3] hover:bg-[#4338ca] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+                  >
+                    <Search className="w-4 h-4" />
+                    Analyze Content
+                  </button>
+                </form>
+              </motion.div>
             )}
 
             {/* ══ ANALYSIS RESULTS ══ */}

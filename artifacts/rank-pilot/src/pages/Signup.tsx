@@ -30,8 +30,8 @@ export default function Signup() {
     try {
       await signup(email.trim(), password);
       toast({ title: "Account created!", description: "Welcome to Rankora AI. You have 5 free credits to get started." });
-      const hasAnalysis = !!localStorage.getItem("rankpilot_analysis_input");
-      navigate(hasAnalysis ? "/dashboard" : "/");
+      localStorage.removeItem("rankpilot_analysis_input");
+      navigate("/");
     } catch (err: any) {
       setError(err.message ?? "Signup failed. Please try again.");
     } finally {
