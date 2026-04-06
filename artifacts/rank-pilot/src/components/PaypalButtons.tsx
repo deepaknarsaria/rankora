@@ -28,7 +28,15 @@ interface ButtonConfig {
 }
 
 interface PayPalActions {
-  subscription: { create: (opts: { plan_id: string }) => Promise<string> };
+  subscription: {
+    create: (opts: {
+      plan_id: string;
+      application_context?: {
+        shipping_preference?: string;
+        user_action?: string;
+      };
+    }) => Promise<string>;
+  };
 }
 
 interface ButtonInstance {
@@ -146,7 +154,13 @@ export default function PaypalButtons({
             height: 44,
           },
           createSubscription: (_data, actions) =>
-            actions.subscription.create({ plan_id: PLAN_IDS[plan] }),
+            actions.subscription.create({
+              plan_id: PLAN_IDS[plan],
+              application_context: {
+                shipping_preference: "NO_SHIPPING",
+                user_action: "SUBSCRIBE_NOW",
+              },
+            }),
           onApprove: (data) => {
             if (mounted && data.subscriptionID) {
               onSuccess(data.subscriptionID);
