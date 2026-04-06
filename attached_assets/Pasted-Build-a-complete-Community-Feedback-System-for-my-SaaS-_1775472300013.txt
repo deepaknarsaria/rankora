@@ -1,0 +1,164 @@
+Build a complete "Community Feedback System" for my SaaS app (Rankora) and integrate it into the main navigation menu.
+
+------------------------------------
+CONTEXT
+------------------------------------
+- My app already has a navigation menu (Home, Features, Pricing, etc.)
+- I want to add "Feedback" in the menu AFTER "Pricing"
+- Tech: Node.js + Express backend + existing frontend (React or HTML)
+- Use MongoDB (or existing DB)
+
+------------------------------------
+1. NAVIGATION INTEGRATION (IMPORTANT)
+------------------------------------
+
+- Add a new menu item: "Feedback"
+- Place it AFTER "Pricing" in the navbar
+- Clicking "Feedback" should:
+  → Open a dedicated page OR scroll to feedback section
+
+Route:
+- /feedback (recommended)
+
+------------------------------------
+2. FEEDBACK PAGE (FRONTEND UI)
+------------------------------------
+
+Create a clean, modern SaaS-style page:
+
+Title:
+"💬 We value your feedback"
+
+Subtitle:
+"Share your thoughts, suggestions, or issues. We read everything."
+
+Form Fields:
+- Name (required)
+- Email (required)
+- Message (required)
+
+Button:
+- "Submit Feedback"
+
+UX:
+- Show success message after submission
+- Disable button while submitting
+- Clean minimal UI
+
+------------------------------------
+3. DATABASE STRUCTURE
+
+Create collection: feedback
+
+Fields:
+- _id
+- name (string)
+- email (string)
+- message (string)
+- reply (string, default null)
+- status ("pending" | "replied")
+- createdAt (date)
+
+------------------------------------
+4. BACKEND APIs
+
+A. POST /api/feedback
+- Validate inputs
+- Save feedback
+- status = "pending"
+- return success
+
+------------------------------------
+
+B. GET /api/feedback
+- Return all feedback (latest first)
+
+------------------------------------
+
+C. POST /api/feedback/reply
+
+Body:
+{
+  id,
+  reply
+}
+
+- Update reply
+- status = "replied"
+
+------------------------------------
+5. ADMIN DASHBOARD (IMPORTANT)
+
+Create simple admin UI:
+
+- Show all feedback in list/table
+- Show:
+  - Name
+  - Email
+  - Message
+  - Status badge (pending/replied)
+  - Reply (if exists)
+
+For each item:
+- Input box for reply
+- "Send Reply" button
+
+Highlight:
+- Pending feedback (different color)
+
+------------------------------------
+6. EMAIL REPLY SYSTEM
+
+Use Nodemailer:
+
+When reply is sent:
+- Send email to user
+
+Subject:
+"Reply to your feedback - Rankora"
+
+Body:
+Include admin reply
+
+Use ENV:
+- EMAIL_USER
+- EMAIL_PASS
+
+------------------------------------
+7. UX IMPROVEMENTS (IMPORTANT)
+
+- Show "No feedback yet" if empty
+- Show loading state on submit
+- Toast or alert on success
+- Clear form after submit
+
+------------------------------------
+8. SECURITY
+
+- Validate all inputs
+- Prevent empty fields
+- Sanitize data
+- Proper error handling
+
+------------------------------------
+9. BONUS (IF POSSIBLE)
+
+- Add small CTA below pricing page:
+
+"Have suggestions? Help us improve → Give Feedback"
+
+Button → redirect to /feedback
+
+------------------------------------
+FINAL GOAL
+
+Users can:
+→ Click "Feedback" in menu
+→ Submit suggestions
+
+Admin can:
+→ View all feedback
+→ Reply directly
+→ Email users automatically
+
+Everything should look clean, premium, and production-ready.

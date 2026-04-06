@@ -320,6 +320,7 @@ export default function Home() {
             <a href="#features" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Features</a>
             <a href="#how-it-works" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">How it Works</a>
             <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
+            <a href={`${import.meta.env.BASE_URL}feedback`} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Feedback</a>
           </nav>
 
           {/* CTA + auth + mobile toggle */}
@@ -376,14 +377,14 @@ export default function Home() {
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-1"
             >
-              {["#features", "#how-it-works", "#pricing"].map((href, i) => (
+              {["#features", "#how-it-works", "#pricing", `${import.meta.env.BASE_URL}feedback`].map((href, i) => (
                 <a
                   key={href}
                   href={href}
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  {["Features", "How it Works", "Pricing"][i]}
+                  {["Features", "How it Works", "Pricing", "Feedback"][i]}
                 </a>
               ))}
               {user ? (
@@ -1100,6 +1101,21 @@ export default function Home() {
           <p className="mt-6 text-center text-xs text-gray-400">
             * Prices may vary based on your region. Credits reset monthly.
           </p>
+        </div>
+      </section>
+
+      {/* ── FEEDBACK CTA ── */}
+      <section className="bg-white border-t border-gray-200 py-14">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-xs font-bold text-[#4d44e3] uppercase tracking-widest mb-3">Community</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Have suggestions? Help us improve.</h2>
+          <p className="text-gray-500 text-sm mb-6">We read every piece of feedback and use it to make Rankora better.</p>
+          <a
+            href={`${import.meta.env.BASE_URL}feedback`}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#4d44e3] hover:bg-[#3d35c3] text-white rounded-xl font-semibold text-sm transition-colors shadow-sm"
+          >
+            💬 Give Feedback
+          </a>
         </div>
       </section>
 
