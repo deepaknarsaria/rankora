@@ -29,6 +29,7 @@ export default function Admin() {
     setError(null);
     try {
       const res = await authFetch("/api/feedback");
+      if (res.status === 401) { navigate("/login"); return; }
       if (res.status === 403) { setAccessDenied(true); return; }
       if (!res.ok) { setError("Failed to load feedback."); return; }
       const data = await res.json();
