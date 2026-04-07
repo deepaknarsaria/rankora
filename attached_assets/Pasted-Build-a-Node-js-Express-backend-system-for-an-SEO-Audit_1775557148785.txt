@@ -1,0 +1,223 @@
+Build a Node.js (Express) backend system for an SEO Audit Tool.
+
+GOAL:
+Create a real-data-based SEO audit system (not generic AI) that:
+- fetches a website
+- analyzes SEO
+- detects issues
+- adds performance data
+- checks broken links
+- detects sitemap
+- extracts keywords
+- does basic competitor analysis
+- generates a structured audit report
+- supports free vs paid logic
+
+-------------------------------------
+TECH STACK:
+- Node.js + Express
+- Axios (for fetching HTML)
+- Cheerio (for parsing HTML)
+- OpenAI API (for insights)
+- Google PageSpeed API (for performance)
+
+-------------------------------------
+CREATE API ENDPOINT:
+
+POST /api/audit
+
+Input:
+{
+  "url": "https://example.com"
+}
+
+-------------------------------------
+STEP 1: FETCH WEBSITE HTML
+
+Use axios to fetch the URL content.
+
+-------------------------------------
+STEP 2: EXTRACT SEO DATA
+
+Using cheerio extract:
+
+- title
+- title length
+- meta description
+- meta description length
+- H1 tags (count + text)
+- number of images
+- number of images missing alt text
+
+-------------------------------------
+STEP 3: SEO ANALYSIS RULES
+
+Create rules:
+
+- Title < 30 or > 60 → issue
+- Meta missing or < 120 → issue
+- H1 count = 0 → issue
+- Missing alt images > 0 → issue
+
+Each issue must include:
+- issue
+- impact (High / Medium / Low)
+- fix (clear instruction)
+
+-------------------------------------
+STEP 4: BROKEN LINK CHECKER
+
+- Extract all <a> links
+- Check first 10 links using axios
+- If request fails → mark as broken
+- Return list of broken URLs
+
+-------------------------------------
+STEP 5: SITEMAP DETECTION
+
+Check:
+https://domain.com/sitemap.xml
+
+Return:
+- exists: true/false
+- sitemap URL if exists
+
+-------------------------------------
+STEP 6: PERFORMANCE DATA (REAL)
+
+Use Google PageSpeed API:
+
+Return:
+- performance score
+- LCP
+- CLS
+
+-------------------------------------
+STEP 7: KEYWORD EXTRACTION
+
+Extract keywords from:
+- title
+- H1
+
+Logic:
+- split words
+- remove small words (<4 chars)
+- return top 5 keywords
+
+-------------------------------------
+STEP 8: KEYWORD RANKING (MVP)
+
+Simulate ranking:
+
+Return for each keyword:
+- keyword
+- position (random 1–50)
+- difficulty (Easy / Medium / Hard)
+
+-------------------------------------
+STEP 9: COMPETITOR ANALYSIS (BASIC)
+
+- Take first keyword
+- Return 3 sample competitor URLs
+- Fetch their title tags
+- Return:
+  - URL
+  - title
+  - title length
+
+-------------------------------------
+STEP 10: CALCULATE SCORE
+
+Start with 100:
+
+- subtract based on issues
+- subtract based on performance
+
+Return final score (0–100)
+
+-------------------------------------
+STEP 11: AI INSIGHTS
+
+Use OpenAI API:
+
+Prompt:
+“You are an SEO expert. Based on this data, give:
+1. Summary
+2. Top 3 fixes
+3. Expected ranking improvement”
+
+-------------------------------------
+STEP 12: FINAL RESPONSE STRUCTURE
+
+Return JSON:
+
+{
+  url,
+  score,
+  seoData: {
+    title,
+    metaDescription,
+    h1Count,
+    missingAlt
+  },
+  performance: {
+    score,
+    lcp,
+    cls
+  },
+  issues: [...],
+  brokenLinks: [...],
+  sitemap: {...},
+  keywords: [...],
+  rankings: [...],
+  competitors: [...],
+  insights: "AI generated"
+}
+
+-------------------------------------
+STEP 13: FREE vs PAID LOGIC
+
+FREE USERS:
+- limit to 3 report downloads
+- show only:
+  - 2 issues
+  - 2 keywords
+  - 1 competitor
+  - partial insights
+
+PAID USERS:
+- show full data
+
+-------------------------------------
+STEP 14: CREDIT SYSTEM
+
+- free users = 3 credits
+- each audit = 1 credit
+- store in localStorage or simple backend memory
+
+If credits = 0:
+return:
+{
+  error: "LIMIT_REACHED"
+}
+
+-------------------------------------
+STEP 15: IMPORTANT RULES
+
+- keep code modular
+- handle errors properly
+- do not crash on invalid URLs
+- limit crawling for speed
+- structure response cleanly
+
+-------------------------------------
+GOAL:
+
+This should feel like a real SEO tool (like Ahrefs lite),
+not a generic AI report.
+
+Focus on:
+- real data
+- clear issues
+- actionable fixes
+- strong structure

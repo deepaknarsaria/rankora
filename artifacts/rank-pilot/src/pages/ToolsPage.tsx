@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Lock, Zap, ArrowRight, X, Star, CheckCircle2,
+  Search, Zap, ArrowRight, X, Star, CheckCircle2,
   TrendingUp, AlertTriangle, Lightbulb, BarChart2, ChevronRight,
-  Download, FileText, Loader2, ShieldCheck,
+  Download, FileText, Loader2, ShieldCheck, Globe, Link2, XCircle,
 } from "lucide-react";
 import jsPDF from "jspdf";
+
+const API_BASE = `${import.meta.env.BASE_URL}api`.replace(/\/\//g, "/");
 
 /* ══════════════════════════════════════
    TOOL CONFIGS
@@ -583,6 +585,154 @@ const TOOLS: Record<string, ToolConfig> = {
 };
 
 /* ══════════════════════════════════════
+   LIVE AUDIT → TOOL RESULT MAPPER
+══════════════════════════════════════ */
+function mapAuditToToolResult(data: any): ToolResult {
+  const score = data.score ?? 50;
+  const seo = data.seoData ?? {};
+  const perf = data.performance ?? {};
+  const issues: any[] = data.issues ?? [];
+  const keywords: string[] = data.keywords ?? [];
+  const rankings: any[] = data.rankings ?? [];
+  const competitors: any[] = data.competitors ?? [];
+  const brokenLinks: string[] = data.brokenLinks ?? [];
+  const sitemap = data.sitemap ?? { exists: false };
+
+  /* Parse AI insights */
+  const insightText: string = data.insights ?? "";
+  const summaryMatch = insightText.match(/SUMMARY:\s*(.+?)(?=\nFIX|$)/s);
+  const summary = summaryMatch?.[1]?.trim() ?? `Your site scored ${score}/100. ${issues.length} issues were detected impacting your search visibility.`;
+
+  /* Key insights from real data */
+  const insights: ToolResult["insights"] = [];
+
+  if (seo.title) {
+    const tl = seo.titleLength ?? seo.title.length;
+    insights.push({
+      type: tl >= 30 && tl <= 60 ? "good" : "warn",
+      label: "Title Tag",
+      text: `"${seo.title}" — ${tl} characters. ${tl < 30 ? "Too short — expand to 50–60 chars." : tl > 60 ? "Too long — will be truncated in search results." : "Length is ideal for Google display."}`,
+    });
+  } else {
+    insights.push({ type: "warn", label: "Title Tag", text: "No title tag found — this is a critical SEO issue. Add a descriptive title immediately." });
+  }
+
+  if (seo.metaDescription) {
+    const ml = seo.metaDescriptionLength ?? seo.metaDescription.length;
+    insights.push({
+      type: ml >= 120 && ml <= 160 ? "good" : "warn",
+      label: "Meta Description",
+      text: `${ml} characters. ${ml < 120 ? "Too short — aim for 150–160 chars with a clear call-to-action." : ml > 160 ? "Too long — will be truncated in search results." : "Perfect length for Google display."}`,
+    });
+  } else {
+    insights.push({ type: "warn", label: "Meta Description", text: "Missing meta description — this directly impacts click-through rate from search results." });
+  }
+
+  insights.push({
+    type: (seo.h1Count ?? 0) === 1 ? "good" : "warn",
+    label: "H1 Heading",
+    text: (seo.h1Count ?? 0) === 0
+      ? "No H1 heading found — this is a high-impact SEO issue."
+      : (seo.h1Count ?? 0) === 1
+      ? `H1 found: "${(seo.h1Tags?.[0] ?? "").slice(0, 60)}" — correctly using one H1 tag.`
+      : `${seo.h1Count} H1 tags found — reduce to exactly one H1 per page.`,
+  });
+
+  if (perf.score !== null && perf.score !== undefined) {
+    insights.push({
+      type: perf.score >= 80 ? "good" : perf.score >= 60 ? "warn" : "warn",
+      label: "Page Speed (Mobile)",
+      text: `PageSpeed score: ${perf.score}/100. ${perf.lcp ? `LCP: ${perf.lcp}` : ""} ${perf.cls ? `· CLS: ${perf.cls}` : ""}. ${perf.score < 70 ? "Needs improvement — slow pages rank lower after Google's Core Web Vitals update." : "Good performance score."}`,
+    });
+  }
+
+  insights.push({
+    type: (seo.wordCount ?? 0) >= 600 ? "good" : "warn",
+    label: "Content Depth",
+    text: `${seo.wordCount ?? 0} words detected. ${(seo.wordCount ?? 0) < 300 ? "Thin content — Google rarely ranks pages under 300 words. Expand to 800+ words." : (seo.wordCount ?? 0) < 600 ? "Below average — consider expanding to 800+ words for better rankings." : "Good content depth for SEO."}`,
+  });
+
+  /* Detailed findings from real data */
+  const detailedFindings: ToolResult["detailedFindings"] = [];
+
+  /* Technical SEO */
+  const techFindings: string[] = [
+    `Title tag: "${(seo.title ?? "MISSING").slice(0, 60)}" (${seo.titleLength ?? 0} chars)`,
+    `Meta description: ${seo.metaDescription ? `"${seo.metaDescription.slice(0, 80)}..." (${seo.metaDescriptionLength ?? 0} chars)` : "MISSING — add immediately"}`,
+    `H1 tags: ${seo.h1Count ?? 0} found ${seo.h1Tags?.length ? `— "${seo.h1Tags[0].slice(0, 50)}"` : ""}`,
+    `H2 subheadings: ${seo.h2Count ?? 0} detected`,
+    `Images: ${seo.imageCount ?? 0} total · ${seo.missingAlt ?? 0} missing alt text`,
+    `Canonical URL: ${seo.canonicalUrl ?? "Not set — add to prevent duplicate content"}`,
+    `Viewport meta tag: ${seo.hasViewportMeta ? "Present ✓" : "Missing — mobile indexing affected"}`,
+    `Structured data (JSON-LD): ${seo.hasStructuredData ? "Detected ✓" : "Not found — add schema for rich snippets"}`,
+    `Internal links: ${seo.internalLinks ?? 0} · External links: ${seo.externalLinks ?? 0}`,
+    `Word count: ~${seo.wordCount ?? 0} words`,
+  ];
+  detailedFindings.push({ category: "On-Page SEO Audit (Real Data)", findings: techFindings });
+
+  /* Issues */
+  if (issues.length > 0) {
+    detailedFindings.push({
+      category: `Issues Found (${issues.length})`,
+      findings: issues.map((i: any) => `[${i.impact}] ${i.issue} — Fix: ${i.fix}`),
+    });
+  }
+
+  /* Performance */
+  if (perf.score !== null && perf.score !== undefined) {
+    detailedFindings.push({
+      category: "Performance & Core Web Vitals (Real Data)",
+      findings: [
+        `Mobile PageSpeed Score: ${perf.score}/100 ${perf.score >= 80 ? "✓ Good" : perf.score >= 60 ? "⚠ Needs Improvement" : "✗ Poor"}`,
+        `LCP (Largest Contentful Paint): ${perf.lcp ?? "N/A"} — target under 2.5s`,
+        `CLS (Cumulative Layout Shift): ${perf.cls ?? "N/A"} — target under 0.1`,
+        `FID/INP: ${perf.fid ?? "N/A"} — target under 200ms`,
+        `Server Response Time (TTFB): ${perf.ttfb ?? "N/A"} — target under 600ms`,
+        perf.score < 70 ? "Recommendation: compress images, defer JavaScript, enable caching and CDN" : "Performance is good — maintain with regular monitoring",
+      ],
+    });
+  }
+
+  /* Keywords & Rankings */
+  if (keywords.length > 0) {
+    detailedFindings.push({
+      category: "Extracted Keywords & Simulated Rankings",
+      findings: [
+        ...rankings.map((r: any) => `"${r.keyword}" — Position: ~${r.position} · Difficulty: ${r.difficulty}`),
+        "Note: Rankings are simulated estimates. Use Google Search Console for actual data.",
+      ],
+    });
+  }
+
+  /* Sitemap & Broken Links */
+  const infraFindings: string[] = [
+    `Sitemap: ${sitemap.exists ? `Found ✓ (${sitemap.sitemapUrl})` : `Not found at ${sitemap.sitemapUrl} — create and submit to Google Search Console`}`,
+    ...(brokenLinks.length > 0
+      ? [`Broken links detected (${brokenLinks.length}):`, ...brokenLinks.map((l: string) => `  ✗ ${l}`)]
+      : ["Broken links: none detected in sample ✓"]),
+  ];
+  detailedFindings.push({ category: "Site Infrastructure", findings: infraFindings });
+
+  /* Competitors */
+  if (competitors.length > 0) {
+    detailedFindings.push({
+      category: "Competitor Title Analysis",
+      findings: competitors.map((c: any) => `${c.url.replace(/https?:\/\/[^/]+/, (m: string) => m)} — "${c.title.slice(0, 70)}" (${c.titleLength} chars)`),
+    });
+  }
+
+  /* Recommendations from issues */
+  const recommendations = issues.slice(0, 6).map((i: any) => i.fix);
+  if (recommendations.length < 3) {
+    recommendations.push("Submit your XML sitemap to Google Search Console");
+    recommendations.push("Implement Article or FAQ schema markup for rich snippet eligibility");
+    recommendations.push("Run a Core Web Vitals audit and fix LCP and CLS issues");
+  }
+
+  return { score, grade: scoreGrade(score), summary, insights, detailedFindings, recommendations };
+}
+
+/* ══════════════════════════════════════
    CREDIT SYSTEM  (3 free reports)
 ══════════════════════════════════════ */
 const CREDIT_KEY = "freeToolsCredits";
@@ -806,15 +956,23 @@ export default function ToolsPage() {
   const [input, setInput] = useState("");
   const [result, setResult] = useState<ToolResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeStep, setAnalyzeStep] = useState("");
   const [credits, setCreditsState] = useState(getCredits);
   const [showModal, setShowModal] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [auditError, setAuditError] = useState<string | null>(null);
+  const [rawAuditData, setRawAuditData] = useState<any>(null);
+
+  const isLiveTool = slug === "seo-audit";
 
   useEffect(() => {
     window.scrollTo(0, 0);
     setResult(null);
     setInput("");
     setAnalyzing(false);
+    setAuditError(null);
+    setRawAuditData(null);
+    setAnalyzeStep("");
   }, [slug]);
 
   if (!tool) {
@@ -829,9 +987,72 @@ export default function ToolsPage() {
     );
   }
 
+  async function handleLiveAudit() {
+    setAnalyzing(true);
+    setResult(null);
+    setAuditError(null);
+    setRawAuditData(null);
+    const steps = [
+      "Fetching website HTML...",
+      "Extracting SEO data...",
+      "Checking broken links...",
+      "Running PageSpeed analysis...",
+      "Analyzing keywords & competitors...",
+      "Generating AI insights...",
+    ];
+    let si = 0;
+    setAnalyzeStep(steps[0]);
+    const stepInterval = setInterval(() => {
+      si = Math.min(si + 1, steps.length - 1);
+      setAnalyzeStep(steps[si]);
+    }, 3500);
+    try {
+      const res = await fetch(`${API_BASE}/audit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: input.trim() }),
+      });
+      const data = await res.json();
+      clearInterval(stepInterval);
+      setAnalyzeStep("");
+      if (res.status === 429 || data.error === "LIMIT_REACHED") {
+        setShowModal(true);
+        setAnalyzing(false);
+        return;
+      }
+      if (!res.ok) {
+        setAuditError(data.error ?? "Audit failed. Please try a different URL.");
+        setAnalyzing(false);
+        return;
+      }
+      const creditsLeft = getCredits();
+      setCreditsState(creditsLeft);
+      setRawAuditData(data);
+      setResult(mapAuditToToolResult(data));
+      setAnalyzing(false);
+      setTimeout(() => {
+        document.getElementById("results-section")?.scrollIntoView({ behavior: "smooth" });
+      }, 200);
+    } catch (e: any) {
+      clearInterval(stepInterval);
+      setAnalyzeStep("");
+      setAuditError("Could not reach the audit server. Please try again.");
+      setAnalyzing(false);
+    }
+  }
+
   function handleAnalyze() {
     if (!input.trim()) return;
     if (credits <= 0) { setShowModal(true); return; }
+    setAuditError(null);
+
+    /* Live SEO Audit → real backend */
+    if (isLiveTool) {
+      handleLiveAudit();
+      return;
+    }
+
+    /* All other tools → fast local simulation */
     setAnalyzing(true);
     setResult(null);
     setTimeout(() => {
@@ -918,7 +1139,8 @@ export default function ToolsPage() {
         {/* ── Hero ── */}
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 bg-[#4d44e3]/10 text-[#4d44e3] text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider mb-4">
-            {tool.emoji} Free Tool · Full Report Included
+            {isLiveTool ? <Globe className="w-3.5 h-3.5" /> : null}
+            {isLiveTool ? "Real-Data Audit · Powered by PageSpeed + AI" : `${tool.emoji} Free Tool · Full Report Included`}
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">{tool.headline}</h1>
           <p className="text-gray-500 text-base max-w-xl">{tool.subtext}</p>
@@ -975,12 +1197,38 @@ export default function ToolsPage() {
           </div>
         </div>
 
+        {/* ── Error state (live audit only) ── */}
+        {auditError && !analyzing && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-start gap-3 mb-6">
+            <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-red-800">{auditError}</p>
+              <p className="text-sm text-red-600 mt-1">Make sure the URL is publicly accessible and starts with https://</p>
+            </div>
+          </div>
+        )}
+
         {/* ── Analyzing state ── */}
         {analyzing && (
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-10 text-center mb-6">
             <div className="w-12 h-12 border-4 border-[#4d44e3]/20 border-t-[#4d44e3] rounded-full animate-spin mx-auto mb-4" />
-            <p className="font-bold text-gray-900 text-lg">Generating your full report...</p>
-            <p className="text-sm text-gray-400 mt-1">Analyzing all factors and compiling detailed findings</p>
+            {isLiveTool ? (
+              <>
+                <p className="font-bold text-gray-900 text-lg">Running real-data SEO audit...</p>
+                <p className="text-sm text-[#4d44e3] mt-2 font-medium animate-pulse">{analyzeStep || "Starting audit..."}</p>
+                <p className="text-xs text-gray-400 mt-2">Full audit takes 15–25 seconds · Please wait</p>
+                <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                  {["HTML Fetch", "SEO Analysis", "Broken Links", "PageSpeed", "Keywords", "AI Insights"].map(s => (
+                    <span key={s} className="text-[10px] font-semibold bg-[#4d44e3]/10 text-[#4d44e3] px-2 py-1 rounded-full">{s}</span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="font-bold text-gray-900 text-lg">Generating your full report...</p>
+                <p className="text-sm text-gray-400 mt-1">Analyzing all factors and compiling detailed findings</p>
+              </>
+            )}
           </div>
         )}
 
