@@ -1,0 +1,133 @@
+Build a SaaS-style “Free Tools” system for my SEO product.
+
+I want a navbar item called “Free Tools” with a dropdown that includes:
+
+- SEO Checker
+- Keyword Generator
+- Content Optimizer (mark this as “🔥 Popular”)
+- Meta Tag Generator
+- Schema Generator
+- Keyword Difficulty
+- Free SEO Audit
+
+Each tool should open its own page using routes like:
+/tools/seo-checker
+/tools/keyword-generator
+/tools/content-optimizer
+/tools/meta-generator
+/tools/schema-generator
+/tools/keyword-difficulty
+/tools/seo-audit
+
+-------------------------------------
+
+Each tool page must follow the SAME reusable layout:
+
+1. Header section:
+- Strong headline (example: “Check Your SEO Score in Seconds”)
+- Small supporting text
+
+2. Input section:
+- Input field or textarea
+- Button: “Analyze Now”
+
+3. Results section:
+- Show partial results ONLY:
+  - Score (random for now)
+  - 2–3 insights
+
+4. Locked premium section (IMPORTANT):
+- Blur or hide advanced results
+- Show message:
+  “Unlock full insights, AI optimization & detailed report”
+- Buttons:
+  - “Upgrade to Pro – $12/month”
+  - “View Pricing”
+
+-------------------------------------
+
+Add a CREDIT SYSTEM:
+
+- Free users get 5 credits
+- Each tool usage = 1 credit
+- Store credits in localStorage (key: userCredits)
+- Default value = 5
+
+When user clicks “Analyze Now”:
+- If credits > 0 → allow action and reduce by 1
+- If credits = 0 → block and show popup
+
+-------------------------------------
+
+Add LIMIT REACHED MODAL:
+
+When credits are finished, show:
+
+Title:
+“You’ve used your free credits”
+
+Message:
+“Upgrade to continue optimizing your content”
+
+Plans:
+- Pro – $12/month (50 credits)
+- Premium – $39/month (150 credits)
+
+Buttons:
+- “Upgrade Now”
+- “View Pricing”
+
+-------------------------------------
+
+Add UPGRADE PROMPTS in 3 places:
+
+1. Below results:
+“Want better rankings? Unlock full SEO insights & AI optimization”
+Button: “Upgrade to Pro – $12/month”
+
+2. Inside locked section:
+“🔒 This feature is available in Pro plan”
+
+3. In limit reached popup
+
+-------------------------------------
+
+Simulate tool output for now using dummy data:
+
+Return:
+- random score (60–90)
+- 2–3 issues
+- premium data (hidden)
+
+-------------------------------------
+
+UI REQUIREMENTS:
+
+- Clean SaaS design (like modern SEO tools)
+- Use cards, spacing, rounded corners
+- Highlight “Content Optimizer” as main feature
+- Make responsive for mobile
+
+-------------------------------------
+
+SEO REQUIREMENTS:
+
+Each tool page should include:
+- page title
+- meta description
+- small SEO text section below (200 words placeholder)
+
+-------------------------------------
+
+GOAL:
+
+- Users can use tools for free (limited)
+- They see partial value
+- Premium features are locked
+- Strong push to upgrade to:
+  - $12/month (Pro)
+  - $39/month (Premium)
+
+Keep code simple, reusable, and modular.
+Do not overcomplicate backend.
+Focus on UI + conversion + credit restriction system.

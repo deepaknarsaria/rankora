@@ -1,0 +1,194 @@
+Build a SaaS-style "Free Tools" feature for my web app (Rankora-like SEO tool).
+
+STACK:
+- Frontend: React + Tailwind CSS (clean modern UI)
+- Backend: Node.js (Express)
+- State: simple local state or minimal backend storage
+- No heavy database required initially
+
+---------------------------------------
+FEATURE 1: NAVBAR DROPDOWN
+---------------------------------------
+
+Add a navbar item:
+
+"Free Tools ▼"
+
+On hover/click show dropdown with:
+
+- SEO Checker
+- Keyword Generator
+- Content Optimizer (highlight as 🔥 or badge "Popular")
+- Meta Tag Generator
+- Schema Generator
+- Keyword Difficulty
+- Free SEO Audit
+
+Each item should route to its own page:
+
+/tools/seo-checker
+/tools/keyword-generator
+/tools/content-optimizer
+/tools/meta-generator
+/tools/schema-generator
+/tools/keyword-difficulty
+/tools/seo-audit
+
+---------------------------------------
+FEATURE 2: TOOL PAGE TEMPLATE (REUSABLE)
+---------------------------------------
+
+Create a reusable ToolPage component with:
+
+SECTION 1: HERO
+- Title (dynamic)
+- Subtitle (conversion-focused)
+- Clean UI
+
+SECTION 2: INPUT
+- Textarea or input field
+- CTA button: "Analyze Now"
+
+SECTION 3: RESULTS (IMPORTANT)
+- Show partial results only:
+  - score
+  - 2–3 insights
+
+SECTION 4: LOCKED CONTENT
+- Blur or lock advanced results
+- Show overlay:
+
+"Unlock full insights, AI optimization & detailed report"
+
+Buttons:
+- "Upgrade to Pro – $12/month"
+- "View Pricing"
+
+SECTION 5: LIMIT WARNING
+- Show remaining credits (example: "2/5 free checks left")
+
+---------------------------------------
+FEATURE 3: CREDIT SYSTEM (IMPORTANT)
+---------------------------------------
+
+Implement simple credit logic:
+
+FREE PLAN:
+- 5 credits/month
+- Each tool usage = 1 credit
+
+Store credits:
+- Use localStorage for now (key: userCredits)
+- Default = 5
+
+When user clicks "Analyze Now":
+- Check credits
+- If credits > 0 → allow
+- Decrease credit by 1
+- If credits = 0 → block action
+
+---------------------------------------
+FEATURE 4: LIMIT REACHED POPUP
+---------------------------------------
+
+When credits are exhausted, show modal:
+
+Title:
+"You’ve used your free credits"
+
+Content:
+"Upgrade to continue optimizing your content"
+
+Plans:
+- Pro – $12/month (50 credits)
+- Premium – $39/month (150 credits)
+
+CTA buttons:
+- "Upgrade Now"
+- "View Pricing"
+
+---------------------------------------
+FEATURE 5: TOOL LOGIC (SIMULATED FOR NOW)
+---------------------------------------
+
+For now, simulate results using dummy data:
+
+Example response:
+
+{
+  score: random between 60-90,
+  insights: [
+    "Missing keyword in title",
+    "Low readability score",
+    "Meta description not optimized"
+  ],
+  premium: {
+    rewrite: "Improved AI content...",
+    keywords: ["seo tool", "rank higher"],
+    advanced: "Detailed competitor analysis..."
+  }
+}
+
+Show only:
+- score
+- 2 insights
+
+Lock:
+- rewrite
+- advanced insights
+
+---------------------------------------
+FEATURE 6: UPGRADE PROMPTS (VERY IMPORTANT)
+---------------------------------------
+
+Add upgrade CTA in 3 places:
+
+1. Below results:
+"Want better rankings? Unlock full SEO insights & AI optimization"
+Buttons:
+- Upgrade to Pro – $12/month
+
+2. Inside locked section:
+"🔒 This feature is available in Pro plan"
+
+3. When limit reached (modal)
+
+---------------------------------------
+FEATURE 7: UI STYLE
+---------------------------------------
+
+- Minimal, clean, SaaS style
+- Rounded cards
+- Soft shadows
+- Gradient buttons for CTA
+- Highlight "Content Optimizer" as primary tool
+- Mobile responsive
+
+---------------------------------------
+FEATURE 8: SEO FRIENDLY ROUTES
+---------------------------------------
+
+Each tool page should have:
+- proper title tag
+- meta description
+- simple SEO text section below tool (200-300 words placeholder)
+
+---------------------------------------
+GOAL:
+---------------------------------------
+
+This system should:
+- allow users to try tools for free
+- restrict usage via credits
+- show partial value
+- push users to upgrade ($12 or $39 plans)
+- feel like a real SaaS product
+
+---------------------------------------
+IMPORTANT:
+---------------------------------------
+
+- Keep code modular
+- Create reusable components
+- Do NOT overcomplicate backend
+- Focus on UI + conversion flow

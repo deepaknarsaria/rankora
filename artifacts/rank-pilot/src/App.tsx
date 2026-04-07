@@ -9,6 +9,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Feedback from "@/pages/Feedback";
 import Admin from "@/pages/Admin";
+import ToolsPage from "@/pages/ToolsPage";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/signup" component={Signup} />
       <Route path="/feedback" component={Feedback} />
       <Route path="/admin" component={Admin} />
+      <Route path="/tools/:toolSlug" component={ToolsPage} />
       <Route component={NotFound} />
     </Switch>
   );

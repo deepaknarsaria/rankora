@@ -319,6 +319,40 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Features</a>
             <a href="#how-it-works" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">How it Works</a>
+
+            {/* Free Tools dropdown */}
+            <div className="relative group">
+              <button className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                Free Tools
+                <svg className="w-3.5 h-3.5 mt-0.5 group-hover:rotate-180 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 pt-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-2 w-56">
+                  {[
+                    { slug: "seo-checker", emoji: "🔍", name: "SEO Checker" },
+                    { slug: "keyword-generator", emoji: "🔑", name: "Keyword Generator" },
+                    { slug: "content-optimizer", emoji: "✨", name: "Content Optimizer", hot: true },
+                    { slug: "meta-generator", emoji: "🏷️", name: "Meta Tag Generator" },
+                    { slug: "schema-generator", emoji: "⚡", name: "Schema Generator" },
+                    { slug: "keyword-difficulty", emoji: "📊", name: "Keyword Difficulty" },
+                    { slug: "seo-audit", emoji: "🛡️", name: "Free SEO Audit" },
+                  ].map(tool => (
+                    <a
+                      key={tool.slug}
+                      href={`${import.meta.env.BASE_URL}tools/${tool.slug}`}
+                      className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-[#4d44e3]/5 hover:text-[#4d44e3] transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>{tool.emoji}</span>
+                        <span className="font-medium">{tool.name}</span>
+                      </span>
+                      {tool.hot && <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">🔥</span>}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
             <a href={`${import.meta.env.BASE_URL}feedback`} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Feedback</a>
           </nav>
@@ -387,6 +421,31 @@ export default function Home() {
                   {["Features", "How it Works", "Pricing", "Feedback"][i]}
                 </a>
               ))}
+              <div className="px-3 pt-2 pb-1">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Free Tools</p>
+                <div className="grid grid-cols-2 gap-1">
+                  {[
+                    { slug: "seo-checker", emoji: "🔍", name: "SEO Checker" },
+                    { slug: "keyword-generator", emoji: "🔑", name: "Keywords" },
+                    { slug: "content-optimizer", emoji: "✨", name: "Content Optimizer", hot: true },
+                    { slug: "meta-generator", emoji: "🏷️", name: "Meta Tags" },
+                    { slug: "schema-generator", emoji: "⚡", name: "Schema" },
+                    { slug: "keyword-difficulty", emoji: "📊", name: "KW Difficulty" },
+                    { slug: "seo-audit", emoji: "🛡️", name: "SEO Audit" },
+                  ].map(tool => (
+                    <a
+                      key={tool.slug}
+                      href={`${import.meta.env.BASE_URL}tools/${tool.slug}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium text-gray-700 hover:bg-[#4d44e3]/5 hover:text-[#4d44e3] transition-colors"
+                    >
+                      <span>{tool.emoji}</span>
+                      <span>{tool.name}</span>
+                      {tool.hot && <span className="text-[9px] font-bold text-orange-600 bg-orange-100 px-1 rounded-full">🔥</span>}
+                    </a>
+                  ))}
+                </div>
+              </div>
               {user ? (
                 <>
                   <button onClick={() => { setMobileMenuOpen(false); navigate("/dashboard"); }}
