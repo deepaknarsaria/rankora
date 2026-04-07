@@ -239,6 +239,15 @@ export default function Dashboard() {
         if (typeof data?.creditsRemaining === "number") {
           setCredits({ remaining: data.creditsRemaining, total: data.creditsTotal ?? 5 });
         }
+        /* Persist result so returning to the page doesn't re-trigger analysis */
+        try {
+          const existing = JSON.parse(localStorage.getItem("rankpilot_analysis_input") ?? "{}");
+          localStorage.setItem("rankpilot_analysis_input", JSON.stringify({
+            ...existing,
+            type: "precomputed",
+            result: data,
+          }));
+        } catch { /* ignore */ }
         setTimeout(() => setScoresEnabled(true), 200);
         toast({ title: "Analysis complete!", description: "Your content has been fully scored." });
       },
@@ -402,7 +411,15 @@ export default function Dashboard() {
 
           {/* New Analysis */}
           <button
-            onClick={() => navigate("/")}
+            onClick={() => {
+              localStorage.removeItem("rankpilot_analysis_input");
+              setAnalysisData(null);
+              setInitialScores(null);
+              setContent("");
+              setTargetKeywords("");
+              setScoresEnabled(false);
+              setAnalyzeError(null);
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-[#4d44e3] hover:bg-[#4338ca] text-white rounded-xl font-semibold text-sm shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" /> New Analysis
