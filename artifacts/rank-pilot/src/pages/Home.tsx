@@ -477,16 +477,38 @@ export default function Home() {
       {/* ── HERO + ANALYZER (above the fold) ── */}
       <section id="analyzer" className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6">
         {/* Hero text */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8 space-y-4">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8 space-y-5">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4d44e3]/8 border border-[#4d44e3]/20 rounded-full text-xs font-semibold text-[#4d44e3] uppercase tracking-wide">
             <Star className="w-3 h-3" /> SEO · AEO · GEO · AI Visibility
           </span>
-          <h1 className="text-4xl md:text-5xl lg:text-5xl font-extrabold text-gray-900 tracking-tighter leading-[1.1]">
-            Your Competitors Are Already Using <span className="text-gradient">AI SEO</span><br className="hidden sm:block" /> Don't Fall Behind.
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-[1.05]">
+            Get Your Brand On Top<br /> Of Search <span className="text-gradient">&amp; LLMs</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-            Rankora <span className="font-semibold text-gray-700">AI</span> analyzes and optimizes your content for SEO, AEO, GEO, and AI visibility so you rank faster and stay ahead.
+          <p className="text-base md:text-lg text-gray-500 max-w-xl mx-auto leading-relaxed">
+            Helped 50+ brands find 300% growth in organic traffic &amp; leads from Google and AI Search
           </p>
+
+          {/* Platform row */}
+          <div className="flex items-center justify-center gap-3 flex-wrap pt-1">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1">Get Your Brand On:</span>
+            {[
+              { label: "ChatGPT", bg: "#10a37f", text: "white", symbol: "✦" },
+              { label: "Perplexity", bg: "#E05C2A", text: "white", symbol: "◈" },
+              { label: "Gemini", bg: "#4285F4", text: "white", symbol: "✦" },
+              { label: "Claude", bg: "#1a1a1a", text: "white", symbol: "◆" },
+              { label: "Google", bg: "#fff", text: "#EA4335", symbol: "G", border: true },
+              { label: "Bing", bg: "#0078D4", text: "white", symbol: "b" },
+            ].map(p => (
+              <div
+                key={p.label}
+                title={p.label}
+                style={{ background: p.bg, color: p.text, border: p.border ? "1.5px solid #e5e7eb" : undefined }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm cursor-default"
+              >
+                {p.symbol}
+              </div>
+            ))}
+          </div>
         </motion.div>
 
         {/* Credits indicator */}
