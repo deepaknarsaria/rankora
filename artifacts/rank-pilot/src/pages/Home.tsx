@@ -489,25 +489,53 @@ export default function Home() {
           </p>
 
           {/* Platform row */}
-          <div className="flex items-center justify-center gap-3 flex-wrap pt-1">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1">Get Your Brand On:</span>
-            {[
-              { label: "ChatGPT", bg: "#10a37f", text: "white", symbol: "✦" },
-              { label: "Perplexity", bg: "#E05C2A", text: "white", symbol: "◈" },
-              { label: "Gemini", bg: "#4285F4", text: "white", symbol: "✦" },
-              { label: "Claude", bg: "#1a1a1a", text: "white", symbol: "◆" },
-              { label: "Google", bg: "#fff", text: "#EA4335", symbol: "G", border: true },
-              { label: "Bing", bg: "#0078D4", text: "white", symbol: "b" },
-            ].map(p => (
-              <div
-                key={p.label}
-                title={p.label}
-                style={{ background: p.bg, color: p.text, border: p.border ? "1.5px solid #e5e7eb" : undefined }}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm cursor-default"
-              >
-                {p.symbol}
-              </div>
-            ))}
+          <div className="flex items-center justify-center gap-2.5 flex-wrap pt-1">
+            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mr-1">Get Your Brand On:</span>
+
+            {/* ChatGPT / OpenAI */}
+            <div title="ChatGPT" className="w-9 h-9 rounded-full bg-[#10a37f] flex items-center justify-center shadow-sm">
+              <svg width="18" height="18" viewBox="0 0 41 41" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M37.532 16.87a9.963 9.963 0 0 0-.856-8.184 10.078 10.078 0 0 0-10.855-4.835 9.964 9.964 0 0 0-6.692-2.969 10.079 10.079 0 0 0-9.612 6.977 9.967 9.967 0 0 0-6.664 4.834 10.08 10.08 0 0 0 1.24 11.817 9.965 9.965 0 0 0 .856 8.185 10.079 10.079 0 0 0 10.855 4.835 9.965 9.965 0 0 0 6.692 2.97 10.079 10.079 0 0 0 9.617-6.981 9.967 9.967 0 0 0 6.663-4.834 10.079 10.079 0 0 0-1.244-11.815zM22.498 37.886a7.474 7.474 0 0 1-4.799-1.735c.061-.033.168-.091.237-.134l7.964-4.6a1.294 1.294 0 0 0 .655-1.134V19.054l3.366 1.944a.12.12 0 0 1 .066.092v9.299a7.505 7.505 0 0 1-7.49 7.496zM6.392 31.006a7.471 7.471 0 0 1-.894-5.023c.06.036.162.099.237.141l7.964 4.6a1.297 1.297 0 0 0 1.308 0l9.724-5.614v3.888a.12.12 0 0 1-.048.103l-8.051 4.649a7.504 7.504 0 0 1-10.24-2.744zM4.297 13.62A7.469 7.469 0 0 1 8.2 10.333c0 .068-.004.19-.004.274v9.201a1.294 1.294 0 0 0 .654 1.132l9.723 5.614-3.366 1.944a.12.12 0 0 1-.114.012L7.044 23.86a7.504 7.504 0 0 1-2.747-10.24zm27.658 6.437l-9.724-5.615 3.367-1.943a.121.121 0 0 1 .114-.012l8.048 4.648a7.498 7.498 0 0 1-1.158 13.528v-9.476a1.293 1.293 0 0 0-.647-1.13zm3.35-5.043c-.059-.037-.162-.099-.236-.141l-7.965-4.6a1.298 1.298 0 0 0-1.308 0l-9.723 5.614v-3.888a.12.12 0 0 1 .048-.103l8.05-4.645a7.497 7.497 0 0 1 11.135 7.763zm-21.063 6.929l-3.367-1.944a.12.12 0 0 1-.065-.092v-9.299a7.497 7.497 0 0 1 12.293-5.756 6.94 6.94 0 0 0-.236.134l-7.965 4.6a1.294 1.294 0 0 0-.654 1.132l-.006 11.225zm1.829-3.943l4.33-2.501 4.332 2.5v4.999l-4.331 2.5-4.331-2.5V18z" fill="white"/>
+              </svg>
+            </div>
+
+            {/* Perplexity */}
+            <div title="Perplexity" className="w-9 h-9 rounded-full bg-[#E05C2A] flex items-center justify-center shadow-sm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="white"/>
+              </svg>
+            </div>
+
+            {/* Gemini */}
+            <div title="Gemini" className="w-9 h-9 rounded-full bg-[#4285F4] flex items-center justify-center shadow-sm">
+              <svg width="18" height="18" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 28C14 26.0633 13.6267 24.2433 12.88 22.54C12.1567 20.8367 11.165 19.355 9.905 18.095C8.645 16.835 7.16333 15.8433 5.46 15.12C3.75667 14.3733 1.93667 14 0 14C1.93667 14 3.75667 13.6383 5.46 12.915C7.16333 12.1683 8.645 11.165 9.905 9.905C11.165 8.645 12.1567 7.16333 12.88 5.46C13.6267 3.75667 14 1.93667 14 0C14 1.93667 14.3617 3.75667 15.085 5.46C15.8317 7.16333 16.835 8.645 18.095 9.905C19.355 11.165 20.8367 12.1683 22.54 12.915C24.2433 13.6383 26.0633 14 28 14C26.0633 14 24.2433 14.3733 22.54 15.12C20.8367 15.8433 19.355 16.835 18.095 18.095C16.835 19.355 15.8317 20.8367 15.085 22.54C14.3617 24.2433 14 26.0633 14 28Z" fill="white"/>
+              </svg>
+            </div>
+
+            {/* Claude / Anthropic */}
+            <div title="Claude" className="w-9 h-9 rounded-full bg-[#1a1a1a] flex items-center justify-center shadow-sm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13.827 3.52h3.603L24 20.39h-3.603l-6.57-16.87zm-3.654 0H6.57L0 20.39h3.603l1.357-3.477h6.174l-1.357-3.124H6.083l2.714-6.99 1.376 3.476z" fill="white"/>
+              </svg>
+            </div>
+
+            {/* Google */}
+            <div title="Google" className="w-9 h-9 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center shadow-sm">
+              <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+            </div>
+
+            {/* Bing */}
+            <div title="Bing" className="w-9 h-9 rounded-full bg-[#0078D4] flex items-center justify-center shadow-sm">
+              <svg width="16" height="18" viewBox="0 0 16 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 2v18l4-2.2V13l5.5 3.2 3-1.8L9 11.5l3.5-2L2 2z" fill="white"/>
+              </svg>
+            </div>
           </div>
         </motion.div>
 
