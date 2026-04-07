@@ -592,11 +592,18 @@ function mapAuditToToolResult(data: any): ToolResult {
   const seo = data.seoData ?? {};
   const perf = data.performance ?? {};
   const issues: any[] = data.issues ?? [];
-  const keywords: string[] = data.keywords ?? [];
-  const rankings: any[] = data.rankings ?? [];
+  /* keywords is now [{keyword, note}] — support both old string[] and new format */
+  const rawKeywords: any[] = data.keywords ?? [];
+  const keywords: string[] = rawKeywords.map((k: any) => (typeof k === "string" ? k : k.keyword));
   const competitors: any[] = data.competitors ?? [];
-  const brokenLinks: string[] = data.brokenLinks ?? [];
+  /* brokenLinks is now [{url, status}] — support both old string[] and new format */
+  const rawBrokenLinks: any[] = data.brokenLinks ?? [];
+  const brokenLinks: Array<{ url: string; status: string }> = rawBrokenLinks.map((l: any) =>
+    typeof l === "string" ? { url: l, status: "broken" } : l
+  );
   const sitemap = data.sitemap ?? { exists: false };
+  const growthOpportunity = data.growthOpportunity ?? null;
+  const upgradeCTA = data.upgradeCTA ?? null;
 
   /* Parse AI insights */
   const insightText: string = data.insights ?? "";
@@ -670,11 +677,15 @@ function mapAuditToToolResult(data: any): ToolResult {
   ];
   detailedFindings.push({ category: "On-Page SEO Audit (Real Data)", findings: techFindings });
 
-  /* Issues */
+  /* Issues — with priority tag + why it matters */
   if (issues.length > 0) {
     detailedFindings.push({
       category: `Issues Found (${issues.length})`,
-      findings: issues.map((i: any) => `[${i.impact}] ${i.issue} — Fix: ${i.fix}`),
+      findings: issues.map((i: any) => {
+        const tag = i.priority ?? `[${i.impact}]`;
+        const why = i.why ? ` Why: ${i.why}` : "";
+        return `${tag} ${i.issue}${why} → Fix: ${i.fix}`;
+      }),
     });
   }
 
@@ -693,31 +704,61 @@ function mapAuditToToolResult(data: any): ToolResult {
     });
   }
 
-  /* Keywords & Rankings */
+  /* Estimated Visibility Keywords (no fake rankings) */
   if (keywords.length > 0) {
     detailedFindings.push({
-      category: "Extracted Keywords & Simulated Rankings",
+      category: "Estimated Visibility Keywords",
       findings: [
-        ...rankings.map((r: any) => `"${r.keyword}" — Position: ~${r.position} · Difficulty: ${r.difficulty}`),
-        "Note: Rankings are simulated estimates. Use Google Search Console for actual data.",
+        "⚠ These are estimated keywords based on your page's title and heading content.",
+        "For actual ranking data, connect Google Search Console.",
+        ...keywords.map((kw: string) => `• "${kw}" — estimated visibility keyword`),
       ],
     });
   }
 
   /* Sitemap & Broken Links */
   const infraFindings: string[] = [
-    `Sitemap: ${sitemap.exists ? `Found ✓ (${sitemap.sitemapUrl})` : `Not found at ${sitemap.sitemapUrl} — create and submit to Google Search Console`}`,
-    ...(brokenLinks.length > 0
-      ? [`Broken links detected (${brokenLinks.length}):`, ...brokenLinks.map((l: string) => `  ✗ ${l}`)]
-      : ["Broken links: none detected in sample ✓"]),
+    `Sitemap: ${sitemap.exists ? `Found ✓ (${sitemap.sitemapUrl})` : `Not found at ${sitemap.sitemapUrl ?? "sitemap.xml"} — create and submit to Google Search Console`}`,
+    brokenLinks.length > 0
+      ? `Broken links detected (${brokenLinks.length} in sample):`
+      : "Broken links: none detected in sample ✓",
+    ...brokenLinks.map((l: { url: string; status: string }) => `  ✗ ${l.url} — ${l.status}`),
   ];
   detailedFindings.push({ category: "Site Infrastructure", findings: infraFindings });
 
-  /* Competitors */
+  /* Competitors — keyword-driven */
   if (competitors.length > 0) {
     detailedFindings.push({
-      category: "Competitor Title Analysis",
-      findings: competitors.map((c: any) => `${c.url.replace(/https?:\/\/[^/]+/, (m: string) => m)} — "${c.title.slice(0, 70)}" (${c.titleLength} chars)`),
+      category: `Top Ranking Competitors for "${keywords[0] ?? "your keyword"}"`,
+      findings: [
+        "These sites rank for your target keyword — study their title structure and content depth:",
+        ...competitors.map((c: any) => `• ${c.url} — "${c.title.slice(0, 70)}" (${c.titleLength} chars)`),
+      ],
+    });
+  }
+
+  /* Growth Opportunity */
+  if (growthOpportunity) {
+    detailedFindings.push({
+      category: "📈 Growth Opportunity",
+      findings: [
+        growthOpportunity.summary,
+        `Estimated traffic increase: ${growthOpportunity.estimatedTrafficIncrease}`,
+        `Expected timeline: ${growthOpportunity.estimatedTime}`,
+      ],
+    });
+  }
+
+  /* Upgrade CTA */
+  if (upgradeCTA) {
+    detailedFindings.push({
+      category: `🚀 ${upgradeCTA.title}`,
+      findings: [
+        "Unlock with a paid plan:",
+        ...upgradeCTA.benefits.map((b: string) => `• ${b}`),
+        "",
+        ...upgradeCTA.plans.map((p: string) => `→ ${p}`),
+      ],
     });
   }
 
