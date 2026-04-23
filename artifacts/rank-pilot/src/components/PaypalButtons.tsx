@@ -45,8 +45,7 @@ interface ButtonInstance {
 }
 
 /* ── Constants ── */
-const CLIENT_ID =
-  "Abq1k-mlr2sgykzRvWXWqvTqWK3e2rGbeZ7hLgLQCbFSseZDzCQkGMCJYCozMGUhOEiQf5f8wlUQSm1W";
+const CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as string;
 
 const SDK_URL =
   `https://www.paypal.com/sdk/js` +
@@ -56,8 +55,8 @@ const SDK_URL =
   `&components=buttons`;
 
 const PLAN_IDS: Record<"pro" | "premium", string> = {
-  pro: "P-375427898Y7862427NHJHTHY",
-  premium: "P-00B848669A0462238NHJHVXY",
+  pro: import.meta.env.VITE_PAYPAL_PRO_PLAN_ID as string,
+  premium: import.meta.env.VITE_PAYPAL_PREMIUM_PLAN_ID as string,
 };
 
 /* ── Returns true when running inside any iframe ── */

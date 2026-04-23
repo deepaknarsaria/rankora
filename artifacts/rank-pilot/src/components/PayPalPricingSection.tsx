@@ -3,9 +3,9 @@ import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { CheckCircle2, Zap, Sparkles, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const PAYPAL_CLIENT_ID = "AXpxri0Crt0mUeUyRldDAoarmzRA02CfRUP5VqmctsQ_I5roPHcqGfQovMcUx0VbnOfBV2gL4REsM1Uc";
-const PRO_PLAN_ID = "P-375427898Y7862427NHJHTHY";
-const PREMIUM_PLAN_ID = "P-00B848669A0462238NHJHVXY";
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as string;
+const PRO_PLAN_ID = import.meta.env.VITE_PAYPAL_PRO_PLAN_ID as string;
+const PREMIUM_PLAN_ID = import.meta.env.VITE_PAYPAL_PREMIUM_PLAN_ID as string;
 
 interface Props {
   isLoggedIn: boolean;
